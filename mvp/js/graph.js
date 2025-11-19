@@ -1,31 +1,160 @@
 const canvas = document.getElementById("graphCanvas");
 const ctx = canvas.getContext("2d");
 
-// Dados do Grafo
-const graph = {
-    A: ["B", "C"],
-    B: ["D", "E"],
-    C: ["F"],
-    D: [],
-    E: ["A"], // Aresta de retorno
-    F: []
-};
+// --- ESTADO ---
+let graph = {};     
+let positions = {}; 
+let isDirected = true;
 
-const positions = {
-    A: { x: 250, y: 60 },
-    B: { x: 150, y: 150 },
-    C: { x: 350, y: 150 },
-    D: { x: 100,  y: 260 },
-    E: { x: 200,  y: 260 },
-    F: { x: 350,  y: 260 }
-};
+// Inicialização
+function initDefaultGraph() {
+    const defaultGraph = {
+        A: ["B", "C"],
+        B: ["D", "E"],
+        C: ["F"],
+        D: [],
+        E: [], 
+        F: []
+    };
+    updateGraphData(defaultGraph);
+}
+
+// --- NOVO MOTOR DE LAYOUT (Árvore Horizontal) ---
+function calculateLayout(graphObj) {
+    const newPositions = {};
+    const nodes = Object.keys(graphObj).sort();
+    
+    if (nodes.length === 0) return {};
+
+    // 1. Descobrir a "Raiz" Lógica
+    const inDegree = {};
+    nodes.forEach(n => inDegree[n] = 0);
+    
+    for (let u in graphObj) {
+        for (let v of graphObj[u]) {
+            if (inDegree[v] !== undefined) inDegree[v]++;
+        }
+    }
+
+    let root = nodes.find(n => inDegree[n] === 0) || nodes[0];
+
+    // 2. BFS para determinar as Camadas
+    const layers = {};
+    const depth = {};
+    const queue = [root];
+    const visited = new Set([root]);
+
+    depth[root] = 0;
+    layers[0] = [root];
+    let maxDepth = 0;
+    
+    let qIndex = 0;
+    while(qIndex < queue.length) {
+        const u = queue[qIndex++];
+        const d = depth[u];
+
+        if (graphObj[u]) {
+            const neighbors = [...graphObj[u]].sort(); 
+            
+            for (let v of neighbors) {
+                if (!visited.has(v)) {
+                    visited.add(v);
+                    depth[v] = d + 1;
+                    maxDepth = Math.max(maxDepth, d + 1);
+                    
+                    if (!layers[d + 1]) layers[d + 1] = [];
+                    layers[d + 1].push(v);
+                    
+                    queue.push(v);
+                }
+            }
+        }
+    }
+
+    nodes.forEach(n => {
+        if (!visited.has(n)) {
+            if (!layers[0]) layers[0] = [];
+            layers[0].push(n); 
+        }
+    });
+
+    // 3. Calcular Coordenadas X e Y
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const paddingX = 60;
+    const paddingY = 60;
+
+    const colWidth = (canvasWidth - 2 * paddingX) / (Math.max(1, maxDepth)); 
+
+    Object.keys(layers).forEach(levelStr => {
+        const level = parseInt(levelStr);
+        const nodesInLayer = layers[level];
+        
+        const x = paddingX + (level * colWidth);
+        const rowHeight = (canvasHeight - 2 * paddingY) / (nodesInLayer.length);
+
+        nodesInLayer.forEach((node, idx) => {
+            const y = paddingY + (idx * rowHeight) + (rowHeight / 2) - (rowHeight * 0.5 * 0); 
+            const finalY = (nodesInLayer.length === 1) ? canvasHeight / 2 : paddingY + (idx * (canvasHeight - 2*paddingY) / (nodesInLayer.length - 1 || 1));
+            newPositions[node] = { x, y: finalY };
+        });
+    });
+
+    return newPositions;
+}
+
+export function updateGraphData(newGraphJSON) {
+    graph = newGraphJSON;
+    
+    for (let u in graph) {
+        if (!graph[u]) graph[u] = [];
+        for (let v of graph[u]) {
+            if (!graph[v]) graph[v] = [];
+        }
+    }
+    
+    positions = calculateLayout(graph);
+}
+
+export function setDirected(directed) {
+    isDirected = directed;
+}
 
 export const graphData = {
-    graph,
-    positions
+    get graph() { return graph; },
+    get positions() { return positions; }
 };
 
-// --- FUNÇÃO DE DESENHO ---
+// --- HELPER: Desenhar Seta ---
+function drawArrow(fromX, fromY, toX, toY, color) {
+    const headLength = 10; 
+    const nodeRadius = 20; 
+
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const angle = Math.atan2(dy, dx);
+
+    const endX = toX - nodeRadius * Math.cos(angle);
+    const endY = toY - nodeRadius * Math.sin(angle);
+
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(endX - headLength * Math.cos(angle - Math.PI / 6), endY - headLength * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(endX - headLength * Math.cos(angle + Math.PI / 6), endY - headLength * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(endX, endY);
+    ctx.lineTo(endX - headLength * Math.cos(angle - Math.PI / 6), endY - headLength * Math.sin(angle - Math.PI / 6));
+    ctx.fill();
+    ctx.stroke();
+}
+
+// --- FUNÇÃO DE DESENHO PRINCIPAL ---
 export function drawGraph(visited, finished, current) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -34,26 +163,45 @@ export function drawGraph(visited, finished, current) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // 1. Desenha as Arestas
+    // 1. Desenha Arestas
     for (let u in graph) {
+        if (!graph[u]) continue; 
+
         for (let v of graph[u]) {
+            if (!positions[u] || !positions[v]) continue;
+
             const a = positions[u];
             const b = positions[v];
             
+            // --- CORREÇÃO AQUI ---
+            let isHighlight = false;
+
+            // Caso 1: Origem é o nó atual (Padrão: A->B)
             if (u === current && graph[u].includes(v)) {
-                ctx.strokeStyle = "#ff0000"; 
-            } else {
-                ctx.strokeStyle = "#ccc"; 
+                isHighlight = true;
+            }
+            
+            // Caso 2: Destino é o nó atual E modo não-direcionado (Padrão: E->A, processando A)
+            // REMOVI a checagem 'graph[v].includes(u)' pois o JSON pode não ter a volta explícita
+            if (!isDirected && v === current) {
+                isHighlight = true;
             }
 
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
+            const edgeColor = isHighlight ? "#ff0000" : "#494949ff";
+
+            if (isDirected) {
+                drawArrow(a.x, a.y, b.x, b.y, edgeColor);
+            } else {
+                ctx.strokeStyle = edgeColor;
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+            }
         }
     }
 
-    // 2. Desenha os Nós
+    // 2. Desenha Nós
     for (let node in positions) {
         const { x, y } = positions[node];
         const radius = 20;
@@ -62,11 +210,11 @@ export function drawGraph(visited, finished, current) {
         ctx.arc(x, y, radius, 0, Math.PI * 2);
 
         if (finished.has(node)) {
-            ctx.fillStyle = "#404040"; // Preto (finalizado)
+            ctx.fillStyle = "#404040"; 
         } else if (visited.has(node)) {
-            ctx.fillStyle = "#ccc"; // Cinza (visitando)
+            ctx.fillStyle = "#ccc"; 
         } else {
-            ctx.fillStyle = "white"; // Branco (não visitado)
+            ctx.fillStyle = "white"; 
         }
         
         ctx.strokeStyle = (node === current) ? "#ff0000" : "black"; 
@@ -74,11 +222,11 @@ export function drawGraph(visited, finished, current) {
         ctx.fill();
         ctx.stroke();
 
-        if(finished.has(node)) {
-            ctx.fillStyle = "white";
-        } else {
-            ctx.fillStyle = "black";
-        }
+        if(finished.has(node)) ctx.fillStyle = "white";
+        else ctx.fillStyle = "black";
+        
         ctx.fillText(node, x, y);
     }
 }
+
+initDefaultGraph();

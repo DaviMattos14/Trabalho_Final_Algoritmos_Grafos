@@ -1,35 +1,35 @@
-// js/algorithms/dfs.js
+// js/algorithms/topological.js
 
 const pseudoCode = [
-    "DFS(u):",
+    "TopologicalSort(u):",
     "  marcar u como visitado (cinza)",
     "  para cada v em vizinhos(u):",
     "    se v não visitado (branco):",
-    "      DFS(v)",
-    "  marcar u como finalizado (preto)"
+    "      TopologicalSort(v)",
+    "  marcar u como finalizado (preto)",
+    "  adicionar u ao INÍCIO da lista" // O passo crucial
 ];
 
 function getSteps(graph, start) {
     const history = [];
+    const topoList = []; // Nossa lista ordenada
     
-    // Estado base
     const state = {
         visited: new Set(),
         finished: new Set(),
         finishedOrder: [],
-        queueSnapshot: [], // DFS não usa fila, mas mantemos vazio para compatibilidade com a UI
+        queueSnapshot: [], // Usaremos para mostrar a Lista Topológica
         node: null,
         line: -1,
         status: "Pronto para iniciar."
     };
 
-    // Função auxiliar para salvar snapshots
     function pushStep(line, status, node) {
         const newState = {
             visited: new Set(state.visited),
             finished: new Set(state.finished),
             finishedOrder: [...state.finishedOrder],
-            queueSnapshot: [], // Sempre vazio no DFS
+            queueSnapshot: [...topoList], // Salva o estado atual da lista
             node: node,
             line: line,
             status: status
@@ -37,59 +37,51 @@ function getSteps(graph, start) {
         history.push(newState);
     }
 
-    // --- PASSO INICIAL (CORREÇÃO) ---
-    // Grava o estado limpo para o grafo aparecer antes do Play
     pushStep(-1, "Pronto para iniciar.", null);
 
     function dfs(u) {
-        
-        // Linha 0: Chamada da função
-        pushStep(0, `Iniciando DFS(${u})`, u);
+        pushStep(0, `Chamando TopologicalSort(${u})`, u);
 
-        // Linha 1: Marcar como visitado (Cinza)
         state.visited.add(u);
-        pushStep(1, `Visitando ${u} (estado: cinza)`, u);
+        pushStep(1, `Visitando ${u} (cinza)`, u);
 
-        // Linha 2: Loop nos vizinhos
         for (const v of graph[u]) {
             pushStep(2, `Checando vizinho ${v}`, v);
             
-            // Linha 3: Se não visitado
             if (!state.visited.has(v)) {
                 pushStep(3, `Vizinho ${v} é branco.`, v);
-                
-                // Linha 4: Chamada Recursiva
-                pushStep(4, `Chamando DFS(${v})`, v);
+                pushStep(4, `Recursão para ${v}`, v);
                 dfs(v);
-                
-                // Retorno da recursão (volta para a linha do loop)
                 pushStep(2, `Retornando para ${u} (após ${v})`, u);
             } else {
-                pushStep(3, `Vizinho ${v} já visitado.`, v);
+                pushStep(3, `Vizinho ${v} já visitado. Ignorando.`, v);
             }
         }
 
-        pushStep(5, `Não há mais vizinhos brancos para ${u}.`, u);
-
-        // Linha 5: Finalizar (Preto)
         state.finished.add(u);
         state.finishedOrder.push(u);
-        pushStep(5, `Finalizando ${u} (estado: preto)`, u);
+        pushStep(5, `Finalizando ${u} (preto)`, u);
+
+        // --- O GRANDE TRUQUE DA ORDENAÇÃO TOPOLÓGICA ---
+        // Adicionamos no INÍCIO da lista (unshift)
+        topoList.unshift(u);
+        pushStep(6, `Adicionando ${u} ao início da Lista Topológica.`, u);
     }
 
-    // Inicia o algoritmo se o nó existir
+    // Loop para garantir que visitamos todos os nós (caso o grafo seja desconexo)
+    // Mas para o MVP, focamos no componente do nó inicial
     if(graph[start]) {
        dfs(start);
     }
     
-    // Passo Final
-    pushStep(-1, "Busca em profundidade concluída.", null);
+    pushStep(-1, "Ordenação concluída.", null);
     
     return history;
 }
 
-export const dfsAlgorithm = {
-    name: "Busca em Profundidade (DFS)",
+export const topologicalAlgorithm = {
+    name: "Ordenação Topológica (DFS)",
+    label: "Lista Topológica:", // Rótulo customizado para a UI
     pseudoCode: pseudoCode,
     getSteps: getSteps
 };
