@@ -3,7 +3,7 @@
 const pseudoCode = [
     "BFS(s):",
     "  crie uma fila Q e enfileire s (cinza)", 
-    "  enquanto Q não vazia:",                 
+    "  enquanto a fila Q não está vazia:",                 
     "    u = desenfileire de Q",               
     "    para cada v em vizinhos(u):",         
     "      se v não visitado (branco):",       
@@ -115,6 +115,7 @@ function getSteps(rawGraph, start) {
 
 export const bfsAlgorithm = {
     name: "Busca em Largura (BFS)",
+    label: "Fila Q:",
     pseudoCode: pseudoCode,
     getSteps: getSteps
 };
