@@ -1,3 +1,5 @@
+import { naturalSort } from "../utils.js";
+
 const pseudoCode = [
     "TopologicalSort(u):",
     "  marcar u como visitado (cinza)",
@@ -7,10 +9,6 @@ const pseudoCode = [
     "  marcar u como finalizado (preto)",
     "  adicionar u ao INÍCIO da lista" 
 ];
-
-function naturalSort(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
 
 function getSteps(graph, start) {
     const history = [];
@@ -27,7 +25,7 @@ function getSteps(graph, start) {
     };
 
     function pushStep(line, status, node) {
-        const newState = {
+        history.push({
             visited: new Set(state.visited),
             finished: new Set(state.finished),
             finishedOrder: [...state.finishedOrder],
@@ -35,8 +33,7 @@ function getSteps(graph, start) {
             node: node,
             line: line,
             status: status
-        };
-        history.push(newState);
+        });
     }
 
     pushStep(-1, "Pronto para iniciar.", null);
@@ -47,11 +44,10 @@ function getSteps(graph, start) {
         state.visited.add(u);
         pushStep(1, `Visitando ${u} (cinza)`, u);
 
-        // Ordenação Natural baseada no target
         const neighbors = [...(graph[u] || [])].sort((a, b) => naturalSort(a.target, b.target));
 
         for (const edge of neighbors) {
-            const v = edge.target; // Extrai alvo
+            const v = edge.target;
             pushStep(2, `Checando vizinho ${v}`, v);
             
             if (!state.visited.has(v)) {

@@ -1,3 +1,5 @@
+import { naturalSort } from "./utils.js"; // <--- IMPORT
+
 const canvas = document.getElementById("graphCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -11,17 +13,13 @@ let dragOffset = { x: 0, y: 0 };
 let isDragging = false;
 let currentDrawState = { visited: new Set(), finished: new Set(), current: null };
 
-function naturalSort(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
-
-// (initDefaultGraph removido, controlado pelo app.js)
+// (Removida definição local de naturalSort)
 
 function getSymmetricGraph(rawGraph) {
     const symmetric = {};
     for (let u in rawGraph) {
         if (!symmetric[u]) symmetric[u] = new Set();
-        for (let edge of rawGraph[u]) { // Lê .target do objeto
+        for (let edge of rawGraph[u]) { 
             const v = edge.target;
             if (!symmetric[v]) symmetric[v] = new Set();
             symmetric[u].add(v);
@@ -93,6 +91,9 @@ export function calculateLayout(graphObj, rootNode) {
     });
     return newPositions;
 }
+
+// ... (Resto do arquivo graph.js permanece idêntico, apenas garantindo que a exportação e imports estão no topo) ...
+// Certifique-se de copiar o restante das funções (updateGraphData, drawing helpers, drawGraph, listeners) do seu arquivo atual ou da minha última resposta completa.
 
 export function updateGraphData(newGraphJSON, startNode) {
     graph = newGraphJSON;
@@ -181,9 +182,11 @@ function drawCurvedArrow(fromX, fromY, toX, toY, color) {
 }
 
 // --- FUNÇÃO DE DESENHO PRINCIPAL ---
-// Agora aceita 'predecessors'
+// Agora aceita 'predecessors' para destacar caminho mínimo
 export function drawGraph(visited, finished, current, distances = null, showWeights = false, predecessors = null) {
-    currentDrawState.visited = visited; currentDrawState.finished = finished; currentDrawState.current = current;
+    currentDrawState.visited = visited; 
+    currentDrawState.finished = finished; 
+    currentDrawState.current = current;
     updateCamera();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save(); 

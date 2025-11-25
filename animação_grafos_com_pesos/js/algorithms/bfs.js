@@ -1,3 +1,5 @@
+import { naturalSort } from "../utils.js";
+
 const pseudoCode = [
     "BFS(s):",
     "  crie uma fila Q e enfileire s (cinza)", 
@@ -10,40 +12,38 @@ const pseudoCode = [
     "    marque u como finalizado (preto)"     
 ];
 
-function naturalSort(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
-
 function getSteps(rawGraph, start) {
     const history = [];
     const queue = [];
 
-    // --- PRÉ-PROCESSAMENTO: SIMETRIA (Adaptado para Objetos) ---
+    // Pré-processamento: Simetria para BFS
     const graph = {};
-    // Copia profunda para não alterar o original
-    for (let key in rawGraph) {
-        graph[key] = rawGraph[key].map(e => ({...e}));
-    }
     
-    // Simetriza: Se existe A->B, cria B->A
+    // Copia e Simetriza em um passo
     for (let u in rawGraph) {
-        for (let edge of rawGraph[u]) {
+        if (!graph[u]) graph[u] = [];
+        // Copia arestas originais
+        rawGraph[u].forEach(edge => {
+            // Adiciona aresta de ida
+            if (!graph[u].some(e => e.target === edge.target)) {
+                graph[u].push({ ...edge });
+            }
+            
+            // Garante destino existe
             const v = edge.target;
             if (!graph[v]) graph[v] = [];
             
-            // Verifica se já existe a volta
+            // Adiciona aresta de volta (Simetria)
             if (!graph[v].some(e => e.target === u)) {
-                // Adiciona a volta mantendo o peso original
                 graph[v].push({ target: u, weight: edge.weight });
             }
-        }
+        });
     }
     
-    // Ordena para consistência visual
+    // Ordenação
     for (let key in graph) {
         graph[key].sort((a, b) => naturalSort(a.target, b.target));
     }
-    // -------------------------------
 
     const state = { visited: new Set(), finished: new Set(), finishedOrder: [], queueSnapshot: [], node: null, line: -1, status: "Pronto para iniciar." };
 
@@ -71,22 +71,17 @@ function getSteps(rawGraph, start) {
         const u = queue.shift();
         pushStep(3, `Desenfileirando ${u}.`, u);
 
-        // Loop sobre arestas (objetos)
         for (const edge of graph[u]) {
-            const v = edge.target; // Extrai o alvo
+            const v = edge.target;
             pushStep(4, `Checando vizinho ${v}`, v);
 
             if (!state.visited.has(v)) {
                 pushStep(5, `Vizinho ${v} é branco.`, v);
-                
                 state.visited.add(v); 
                 pushStep(6, `Marcando ${v} visitado.`, v);
-                
                 queue.push(v);
                 pushStep(7, `Enfileirando ${v}.`, v);
             } else {
-                // --- ALTERAÇÃO AQUI ---
-                // Mensagem específica quando o vizinho já foi visitado
                 pushStep(5, `Vizinho ${v} já visitado. Vamos para o próximo.`, v);
             }
         }

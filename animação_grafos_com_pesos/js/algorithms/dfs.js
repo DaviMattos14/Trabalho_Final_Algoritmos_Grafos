@@ -1,3 +1,5 @@
+import { naturalSort } from "../utils.js";
+
 const pseudoCode = [
     "DFS(u):",
     "  marcar u como visitado (cinza)",
@@ -7,14 +9,8 @@ const pseudoCode = [
     "  marcar u como finalizado (preto)"
 ];
 
-function naturalSort(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
-
 function getSteps(graph, start) {
     const history = [];
-    
-    // Rastreamento da Pilha de Recursão
     const stack = []; 
 
     const state = {
@@ -43,25 +39,21 @@ function getSteps(graph, start) {
 
     function dfs(u) {
         stack.push(u);
-
         pushStep(0, `Iniciando DFS(${u})`, u);
 
         state.visited.add(u);
         pushStep(1, `Visitando ${u} (estado: cinza)`, u);
 
-        // Ordenação Natural dos vizinhos (baseada no target)
         const neighbors = [...(graph[u] || [])].sort((a, b) => naturalSort(a.target, b.target));
 
         for (const edge of neighbors) {
-            const v = edge.target; // Extrai o alvo do objeto
+            const v = edge.target;
             pushStep(2, `Checando vizinho ${v}`, v);
             
             if (!state.visited.has(v)) {
                 pushStep(3, `Vizinho ${v} é branco.`, v);
-                
                 pushStep(4, `Chamando DFS(${v})`, v);
                 dfs(v); 
-                
                 pushStep(2, `Retornando para ${u} (após ${v})`, u);
             } else {
                 pushStep(3, `Vizinho ${v} já visitado.`, v);

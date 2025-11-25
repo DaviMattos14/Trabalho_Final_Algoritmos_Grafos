@@ -1,6 +1,7 @@
 import { renderPseudoCode, highlightLine } from "./pseudo.js";
 import { drawGraph, graphData, updateGraphData, setDirected } from "./graph.js";
 import { loadGraphToEditor, exportGraphFromEditor, clearEditor } from "./editor.js";
+import { naturalSort, graphToText, textToGraph } from "./utils.js"; // <--- IMPORTAÇÃO CORRETA
 import { dfsAlgorithm } from "./algorithms/dfs.js";
 import { bfsAlgorithm } from "./algorithms/bfs.js";
 import { topologicalAlgorithm } from "./algorithms/topological.js";
@@ -25,53 +26,7 @@ let playPauseBtn, prevBtn, nextBtn, resetBtn, speedSlider, algoSelector, startNo
 let modalEl, btnEditGraph, spanCloseModal;
 let tabBtns, tabContents;
 let currentTab = 'text';
-
-// --- HELPERS GERAIS ---
-
-function naturalSort(a, b) {
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-}
-
-// --- HELPERS DE FORMATAÇÃO ---
-
-function graphToText(graphObj) {
-    const keys = Object.keys(graphObj).sort(naturalSort);
-    
-    const lines = keys.map(key => {
-        const neighbors = graphObj[key].map(edge => {
-            if (edge.weight === 1) return `"${edge.target}"`;
-            return `["${edge.target}", ${edge.weight}]`;
-        });
-        return `${key}: [${neighbors.join(", ")}]`;
-    });
-
-    return lines.join(',\n');
-}
-
-function textToGraph(text) {
-    let cleanText = text.trim();
-    cleanText = cleanText.replace(/,(\s*)$/, '$1');
-
-    if (!cleanText.startsWith('{')) {
-        cleanText = '{' + cleanText + '}';
-    }
-
-    cleanText = cleanText.replace(/([a-zA-Z0-9_]+)\s*:/g, '"$1":');
-    
-    const rawObj = JSON.parse(cleanText);
-    const normalizedGraph = {};
-
-    for (let key in rawObj) {
-        normalizedGraph[key] = rawObj[key].map(item => {
-            if (Array.isArray(item)) {
-                return { target: item[0].toString(), weight: Number(item[1]) };
-            } else {
-                return { target: item.toString(), weight: 1 };
-            }
-        });
-    }
-    return normalizedGraph;
-}
+let directedCheckbox, directedControlContainer;
 
 // --- LOCAL STORAGE ---
 
@@ -81,8 +36,27 @@ function saveToLocal(graph, startNode) {
 }
 
 function loadFromLocal() {
-    const data = localStorage.getItem("graphData");
-    return data ? JSON.parse(data) : null;
+    try {
+        const data = localStorage.getItem("graphData");
+        if (!data) return null;
+        
+        const parsed = JSON.parse(data);
+        
+        const firstKey = Object.keys(parsed.graph)[0];
+        if (firstKey && parsed.graph[firstKey].length > 0) {
+            const firstEdge = parsed.graph[firstKey][0];
+            if (typeof firstEdge === 'string') {
+                console.warn("Migrando dados antigos do LocalStorage...");
+                for (let key in parsed.graph) {
+                    parsed.graph[key] = parsed.graph[key].map(target => ({ target, weight: 1 }));
+                }
+            }
+        }
+        return parsed;
+    } catch (e) {
+        console.error("Erro ao ler LocalStorage", e);
+        return null;
+    }
 }
 
 // --- RENDERIZAÇÃO ---
@@ -95,13 +69,15 @@ function renderStep(index) {
     highlightLine(step.line);
     statusEl.textContent = step.status;
     
-    // --- CORREÇÃO DE FORMATAÇÃO AQUI ---
     const finishedList = step.finishedOrder || [];
     if (finishedList.length > 0) {
-        // Junta com vírgula e espaço e envolve em chaves
-        finishedVectorEl.textContent = `{ ${finishedList.join(', ')} }`;
+        if (currentAlgorithm === dijkstraAlgorithm) {
+             finishedVectorEl.textContent = `{ ${finishedList.join(', ')} }`;
+        } else {
+             finishedVectorEl.textContent = `[${finishedList.join(', ')}]`;
+        }
     } else {
-        finishedVectorEl.textContent = "{}";
+        finishedVectorEl.textContent = currentAlgorithm === dijkstraAlgorithm ? "{}" : "[]";
     }
     
     const queueText = step.queueSnapshot ? step.queueSnapshot.join(', ') : "";
@@ -143,6 +119,7 @@ function reset() { if (isPlaying) togglePlayPause(); currentStep = 0; renderStep
 
 function openModal() {
     const currentGraph = graphData.graph;
+    // Usa função importada de utils.js
     graphInputEl.value = graphToText(currentGraph);
     loadGraphToEditor(currentGraph);
     switchTab('text');
@@ -156,6 +133,7 @@ function closeModal() {
 function switchTab(tabName) {
     if (currentTab === 'text' && tabName === 'visual') {
         try {
+            // Usa função importada de utils.js
             const graphFromText = textToGraph(graphInputEl.value);
             loadGraphToEditor(graphFromText);
         } catch (e) {
@@ -183,14 +161,14 @@ function onLoadGraphClick() {
     
     try {
         if (currentTab === 'text') {
-            const rawText = graphInputEl.value;
-            newGraph = textToGraph(rawText);
+            newGraph = textToGraph(graphInputEl.value);
         } else {
             newGraph = exportGraphFromEditor();
         }
 
         if (typeof newGraph !== 'object' || newGraph === null) throw new Error("Erro: Grafo inválido.");
 
+        // Usa função importada de utils.js
         const keys = Object.keys(newGraph).sort(naturalSort);
         if (keys.length === 0) throw new Error("O grafo não pode estar vazio.");
 
@@ -211,9 +189,29 @@ function onLoadGraphClick() {
     }
 }
 
+// --- LÓGICA DE CONTROLE DE ALGORITMOS E CHECKBOX ---
+
 function onAlgorithmChange(event) {
     const selectedKey = event.target.value;
     currentAlgorithm = ALGORITHMS[selectedKey];
+    
+    // Controla a visibilidade e o estado padrão do checkbox
+    if (currentAlgorithm === dijkstraAlgorithm) {
+        directedControlContainer.style.display = "flex";
+        directedCheckbox.checked = true;
+    } else if (currentAlgorithm === bfsAlgorithm) {
+        directedControlContainer.style.display = "none";
+        directedCheckbox.checked = false;
+    } else {
+        directedControlContainer.style.display = "none";
+        directedCheckbox.checked = true;
+    }
+    
+    initializeAnimationData();
+    reset();
+}
+
+function onDirectionChange() {
     initializeAnimationData();
     reset();
 }
@@ -245,21 +243,17 @@ function initializeAnimationData() {
     const label = currentAlgorithm.label || "Fila (Queue):";
     queueLabelEl.textContent = label;
     
-    // Controle do Label de Finalização/Distância
     const finishedLabelEl = document.querySelector("#finishedBox strong");
-    if (currentAlgorithm === dijkstraAlgorithm) {
-        if(finishedLabelEl) finishedLabelEl.textContent = "Distâncias Finais:";
-        setDirected(false); 
-    } else {
-        if(finishedLabelEl) finishedLabelEl.textContent = "Ordem de Finalização:";
-        if (currentAlgorithm === bfsAlgorithm) {
-            setDirected(false);
-        } else {
-            setDirected(true);
-        }
+    if (finishedLabelEl) {
+        if (currentAlgorithm === dijkstraAlgorithm) finishedLabelEl.textContent = "Distâncias Finais:";
+        else finishedLabelEl.textContent = "Ordem de Finalização:";
     }
 
-    algorithmSteps = currentAlgorithm.getSteps(graphData.graph, effectiveStartNode);
+    const isDirected = directedCheckbox.checked;
+    
+    setDirected(isDirected);
+
+    algorithmSteps = currentAlgorithm.getSteps(graphData.graph, effectiveStartNode, isDirected);
 }
 
 function initialize() {
@@ -281,6 +275,9 @@ function initialize() {
     resetBtn = document.getElementById("resetBtn");
     speedSlider = document.getElementById("speedSlider");
     algoSelector = document.getElementById("algoSelector");
+    
+    directedCheckbox = document.getElementById("directedCheckbox");
+    directedControlContainer = document.getElementById("directedControlContainer");
 
     tabBtns = document.querySelectorAll('.tab-btn');
     tabContents = document.querySelectorAll('.tab-content');
@@ -293,8 +290,10 @@ function initialize() {
     nextBtn.onclick = stepForward;
     resetBtn.onclick = reset;
     speedSlider.oninput = onSpeedChange;
+    
     algoSelector.onchange = onAlgorithmChange;
     startNodeInput.onchange = onStartNodeChange;
+    directedCheckbox.onchange = onDirectionChange;
     
     btnEditGraph.onclick = openModal;
     spanCloseModal.onclick = closeModal;
@@ -319,6 +318,10 @@ function initialize() {
         updateGraphData(defaultGraph, "0");
         startNodeInput.value = "0";
     }
+
+    // Configuração inicial correta do checkbox
+    algoSelector.value = 'dfs'; 
+    onAlgorithmChange({ target: { value: 'dfs' } });
 
     setTimeout(() => {
         initializeAnimationData();
