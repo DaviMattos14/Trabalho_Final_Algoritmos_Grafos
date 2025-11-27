@@ -19,7 +19,6 @@ function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/algorithms" element={<AlgorithmsList />} />
             
-            {/* MUDANÇA: Visualizer agora está aqui dentro! */}
             <Route path="/visualizer" element={<Visualizer />} />
         </Route>
       </Routes>

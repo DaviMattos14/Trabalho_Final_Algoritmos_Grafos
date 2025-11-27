@@ -1,23 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { Edit3 } from 'lucide-react'; 
 
-// Hook e Utils
 import { useGraph } from '../hooks/useGraph';
 import { graphToText, textToGraph } from '../utils/graphUtils';
 
-// Componentes
 import GraphCanvas from '../components/Graph/GraphCanvas';
 import GraphEditor from '../components/Graph/GraphEditor';
 import Controls from '../components/Graph/Controls';
 
-// CSS Global
 import '../components/Graph/engine.css'; 
 
 const Visualizer = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const algoParam = searchParams.get('algo') || 'dfs';
+    
+    // Captura o tema do MainLayout
+    const context = useOutletContext();
+    const isDarkMode = context ? context.isDarkMode : false;
 
     const {
         graph, positions, isDirected, startNode,
@@ -25,50 +26,37 @@ const Visualizer = () => {
         isPlaying, speed,
         setStartNode, setIsDirected, setSpeed, setIsPlaying,
         stepForward, stepBackward, resetAnimation,
-        saveGraphFromEditor
+        saveGraphFromEditor, updateNodePosition 
     } = useGraph(algoParam);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('text'); 
     const [textInput, setTextInput] = useState('');
 
-    // --- ESTADO LOCAL PARA O INPUT DE INÍCIO (Buffer) ---
     const [localStartNode, setLocalStartNode] = useState(startNode);
+    useEffect(() => setLocalStartNode(startNode), [startNode]);
 
-    // Sincroniza o input local quando o motor muda o nó externamente (ex: ao carregar novo grafo)
-    useEffect(() => {
-        setLocalStartNode(startNode);
-    }, [startNode]);
-
-    // --- HANDLERS DO INPUT DE INÍCIO ---
-    
-    const handleStartNodeChange = (e) => {
-        setLocalStartNode(e.target.value);
+    // --- CORES DO TEMA ---
+    const theme = {
+        bg: isDarkMode ? '#0f172a' : '#f0f2f5',
+        panelBg: isDarkMode ? '#1e293b' : '#ffffff',
+        text: isDarkMode ? '#f1f5f9' : '#1e293b',
+        textSec: isDarkMode ? '#94a3b8' : '#64748b',
+        border: isDarkMode ? '#556e92ff' : '#e5e7eb',
+        inputBg: isDarkMode ? '#0f172a' : '#f9fafb',
+        cardBg: isDarkMode ? '#1e293b' : '#ffffff',
+        codeBg: isDarkMode ? '#0f172a' : '#f8fafc',
     };
 
+    const handleStartNodeChange = (e) => setLocalStartNode(e.target.value);
     const handleStartNodeCommit = () => {
-        // Só atualiza o motor se o nó existir no grafo
-        if (graph[localStartNode]) {
-            setStartNode(localStartNode);
-        } else {
-            // Se inválido, reverte para o valor real atual e avisa
-            setLocalStartNode(startNode);
-            // Opcional: alert("Nó não encontrado!");
-        }
+        if (graph[localStartNode]) setStartNode(localStartNode);
+        else setLocalStartNode(startNode);
     };
-
     const handleStartNodeKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleStartNodeCommit();
-            e.target.blur(); // Tira o foco
-        }
+        if (e.key === 'Enter') { handleStartNodeCommit(); e.target.blur(); }
     };
-
-    const handleFocus = (e) => {
-        e.target.select(); // Seleciona todo o texto ao clicar
-    };
-
-    // --- HANDLERS DO MODAL ---
+    const handleFocus = (e) => e.target.select();
 
     const handleOpenModal = () => {
         setTextInput(graphToText(graph));
@@ -81,52 +69,33 @@ const Visualizer = () => {
             const newGraph = textToGraph(textInput);
             const keys = Object.keys(newGraph);
             if (keys.length === 0) throw new Error("O grafo não pode ser vazio");
-            
             let newStart = startNode;
             if (!newGraph[newStart]) newStart = keys[0];
-
             saveGraphFromEditor(newGraph, newStart);
             setIsModalOpen(false);
-        } catch (e) {
-            alert("Erro no formato do JSON: " + e.message);
-        }
+        } catch (e) { alert("Erro no formato do JSON: " + e.message); }
     };
 
     const renderFinishedList = (list) => {
         if (!list || list.length === 0) return '[]';
-        if (currentAlgoInfo?.name?.includes('Dijkstra')) {
-            return `{ ${list.join(', ')} }`;
-        }
+        if (currentAlgoInfo?.name?.includes('Dijkstra')) return `{ ${list.join(', ')} }`;
         return `[${list.join(', ')}]`;
     };
 
     return (
-        <div className="viz-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        <div className="viz-wrapper" style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: theme.bg }}>
             
-            {/* 1. Header */}
-            <div style={{ height: '60px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', padding: '0 20px', backgroundColor: 'white', justifyContent: 'space-between', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <button onClick={() => navigate('/algorithms')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: '#64748b' }}>
-                        <ArrowLeft size={20} /> Voltar
-                    </button>
-                    <div style={{ width: '1px', height: '24px', background: '#e5e7eb', margin: '0 10px' }}></div>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1e293b', margin: 0 }}>
-                        {currentAlgoInfo?.name || 'Visualizador'}
-                    </h2>
-                </div>
-            </div>
-
-            {/* 2. Conteúdo */}
-            <div id="container" style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+            {/* ÁREA PRINCIPAL */}
+            <div id="container" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 
                 {/* Esquerda */}
                 <div className="left-column">
-                    <div className="control-row">
+                    <div className="control-row" style={{ backgroundColor: theme.panelBg, borderColor: theme.border }}>
                         <button onClick={handleOpenModal} className="action-btn" style={{display:'flex', alignItems:'center', gap:'8px'}}>
                             <Edit3 size={16} /> Editar Grafo
                         </button>
-                        <div className="input-wrapper">
-                            <label htmlFor="startNodeInput" style={{fontSize: '0.9rem', color: '#64748b'}}>Início:</label>
+                        <div className="input-wrapper" style={{ backgroundColor: theme.inputBg, borderColor: theme.border }}>
+                            <label htmlFor="startNodeInput" style={{fontSize: '0.9rem', color: theme.textSec}}>Início:</label>
                             <input 
                                 type="text" 
                                 id="startNodeInput" 
@@ -136,72 +105,76 @@ const Visualizer = () => {
                                 onBlur={handleStartNodeCommit}
                                 onKeyDown={handleStartNodeKeyDown}
                                 onFocus={handleFocus}
+                                style={{ 
+                                    backgroundColor: theme.panelBg, 
+                                    color: theme.text,
+                                    borderColor: theme.border
+                                }}
                             />
                         </div>
                     </div>
                     
-                    <div style={{ flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'white', position: 'relative' }}>
+                    <div style={{ flex: 1, border: `1px solid ${theme.border}`, borderRadius: '8px', overflow: 'hidden', backgroundColor: theme.panelBg, position: 'relative' }}>
                         <GraphCanvas 
                             graph={graph}
                             positions={positions}
                             isDirected={isDirected}
                             currentStepData={currentStepData}
                             showWeights={currentAlgoInfo?.isWeighted}
-                            onNodeDrag={(id, x, y) => {
-                                // Precisamos importar updateNodePosition do hook, mas ele não está exposto aqui no destructuring inicial
-                                // Para corrigir isso rápido sem mudar o hook, vou assumir que você vai adicionar updateNodePosition no destructuring lá em cima
-                                // Se não estiver, adicione: updateNodePosition
-                            }} 
+                            onNodeDrag={updateNodePosition}
+                            isDarkMode={isDarkMode} 
                         />
-                        {/* Nota: Esqueci de adicionar updateNodePosition no destructuring acima. Adicionando agora abaixo */}
                     </div>
                 </div>
 
                 {/* Direita */}
                 <div id="uiPanel">
-                    <div id="codeBox">
-                        <strong>Pseudocódigo:</strong>
-                        <div style={{ 
-                            fontFamily: 'monospace', 
-                            fontSize: '0.85rem', 
-                            lineHeight: '1.5', 
-                            marginTop: '10px',
-                            maxHeight: '300px', 
-                            overflowY: 'auto' 
+                    {/* Box Genérico de Estilo */}
+                    {[
+                        { title: 'Pseudocódigo', content: (
+                            <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: '1.5', marginTop: '10px', maxHeight: '300px', overflowY: 'auto', whiteSpace: 'pre-wrap', color: theme.text }}>
+                                {currentAlgoInfo?.pseudoCode?.map((line, i) => (
+                                    <div key={i} style={{ 
+                                        backgroundColor: currentStepData.line === i ? (isDarkMode ? '#854d0e' : '#fef08a') : 'transparent',
+                                        color: currentStepData.line === i ? (isDarkMode ? '#fff' : '#000') : theme.text,
+                                        fontWeight: currentStepData.line === i ? 'bold' : 'normal',
+                                        padding: '2px 4px',
+                                        fontFamily: '"Courier New", monospace'
+                                    }}>
+                                        {line}
+                                    </div>
+                                ))}
+                            </div>
+                        )},
+                        { title: currentAlgoInfo?.label || "Fila:", content: (
+                            <div style={{ marginTop: '5px', fontFamily: 'monospace', color: isDarkMode ? '#4ade80' : '#15803d', fontWeight: 'bold', whiteSpace: 'pre-wrap' }}>
+                                {currentStepData.queueSnapshot ? `[${currentStepData.queueSnapshot.join(', ')}]` : '[]'}
+                            </div>
+                        )},
+                        { title: 'Status', content: (
+                            <div style={{ marginTop: '5px', color: theme.textSec }}>
+                                {currentStepData.status || 'Aguardando...'}
+                            </div>
+                        )},
+                        { title: currentAlgoInfo?.name?.includes('Dijkstra') ? 'Distâncias Finais' : 'Ordem de Finalização', content: (
+                            <div style={{ marginTop: '5px', fontFamily: 'monospace', color: isDarkMode ? '#60a5fa' : '#1e40af', wordBreak: 'break-word' }}>
+                                { renderFinishedList(currentStepData.finishedOrder) }
+                            </div>
+                        )}
+                    ].map((card, idx) => (
+                        <div key={idx} style={{ 
+                            backgroundColor: theme.cardBg, 
+                            padding: '15px', 
+                            border: `1px solid ${theme.border}`, 
+                            borderRadius: '8px', 
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)' 
                         }}>
-                            {currentAlgoInfo?.pseudoCode?.map((line, i) => (
-                                <div key={i} style={{ 
-                                    backgroundColor: currentStepData.line === i ? '#fef08a' : 'transparent',
-                                    fontWeight: currentStepData.line === i ? 'bold' : 'normal',
-                                    padding: '2px 4px',
-                                    whiteSpace: 'pre-wrap', 
-                                    fontFamily: '"Courier New", monospace' 
-                                }}>
-                                    {line}
-                                </div>
-                            ))}
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: '600', color: theme.textSec, margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                {card.title}
+                            </h3>
+                            {card.content}
                         </div>
-                    </div>
-                    <div id="queueBox">
-                        <strong id="queueLabel">{currentAlgoInfo?.label || "Fila:"}</strong>
-                        <div id="queueVector" style={{ marginTop: '5px', fontFamily: 'monospace', color: '#15803d', fontWeight: 'bold', whiteSpace: 'pre-wrap' }}>
-                            {currentStepData.queueSnapshot ? `[${currentStepData.queueSnapshot.join(', ')}]` : '[]'}
-                        </div>
-                    </div>
-                    <div id="statusBox">
-                        <strong>Status:</strong>
-                        <div id="statusText" style={{ marginTop: '5px', color: '#475569' }}>
-                            {currentStepData.status || 'Aguardando...'}
-                        </div>
-                    </div>
-                    <div id="finishedBox">
-                        <strong id="finishedLabel">
-                            {currentAlgoInfo?.name?.includes('Dijkstra') ? 'Distâncias Finais' : 'Ordem de Finalização'}
-                        </strong>
-                        <div id="finishedVector" style={{ marginTop: '5px', fontFamily: 'monospace', color: '#1e40af', wordBreak: 'break-word' }}>
-                            { renderFinishedList(currentStepData.finishedOrder) }
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
 
@@ -218,15 +191,18 @@ const Visualizer = () => {
                     showDirectedControl={currentAlgoInfo?.name?.includes('Dijkstra')}
                     isDirected={isDirected}
                     onToggleDirected={() => setIsDirected(!isDirected)}
+                    isDarkMode={isDarkMode} 
                 />
             </div>
 
             {/* 4. Modal */}
             {isModalOpen && (
                 <div className="modal" style={{ display: 'flex' }}>
-                    <div className="modal-content">
-                        <span className="close-modal" onClick={() => setIsModalOpen(false)}>&times;</span>
-                        <h2>Editar Grafo</h2>
+                    <div className="modal-content" style={{ backgroundColor: theme.panelBg, color: theme.text, borderColor: theme.border }}>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '15px'}}>
+                            <h2 style={{margin: 0}}>Editar Grafo</h2>
+                            <span className="close-modal" onClick={() => setIsModalOpen(false)} style={{color: theme.textSec}}>&times;</span>
+                        </div>
                         
                         <div className="tabs">
                             <button className={`tab-btn ${activeTab === 'text' ? 'active' : ''}`} onClick={() => setActiveTab('text')}>📝 Texto</button>
@@ -236,14 +212,20 @@ const Visualizer = () => {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                             {activeTab === 'text' ? (
                                 <div id="tab-text" className="tab-content active">
-                                    <p className="hint">Formato: <b>0: [ ["1", 5], "2" ]</b></p>
+                                    <p className="hint" style={{ color: theme.textSec }}>
+                                        Formato Ponderado: <b>0: [ ["1", 5], "2" ]</b><br />
+                                        (Use <b>["Destino", Peso]</b> ou apenas <b>"Destino"</b> para peso 1)
+                                    </p>
                                     <textarea 
                                         value={textInput}
                                         onChange={(e) => setTextInput(e.target.value)}
-                                        style={{ height: '100%', width: '100%', resize: 'none', fontFamily: 'monospace' }}
+                                        style={{ 
+                                            height: '100%', width: '100%', resize: 'none', fontFamily: 'monospace',
+                                            backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border
+                                        }}
                                     ></textarea>
                                      <div className="modal-actions">
-                                        <button onClick={handleSaveText} className="primary-btn">Salvar Texto</button>
+                                        <button onClick={handleSaveText} className="primary-btn">Salvar e Atualizar</button>
                                     </div>
                                 </div>
                             ) : (
@@ -254,6 +236,7 @@ const Visualizer = () => {
                                         setIsModalOpen(false);
                                     }}
                                     onClose={() => setIsModalOpen(false)}
+                                    isDarkMode={isDarkMode}
                                 />
                             )}
                         </div>

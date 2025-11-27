@@ -2,7 +2,7 @@ import { naturalSort } from "../utils/graphUtils.js";
 
 const pseudoCode = [
     "DFS(u):",
-    "  marcar u como visitado (cinza)",
+    "  marcar u como visitado (laranja)",
     "  para cada v em vizinhos(u):",
     "    se v não visitado (branco):",
     "      DFS(v)",
@@ -42,7 +42,7 @@ function getSteps(graph, start) {
         pushStep(0, `Iniciando DFS(${u})`, u);
 
         state.visited.add(u);
-        pushStep(1, `Visitando ${u} (estado: cinza)`, u);
+        pushStep(1, `Visitando ${u} (estado: laranja)`, u);
 
         const neighbors = [...(graph[u] || [])].sort((a, b) => naturalSort(a.target, b.target));
 

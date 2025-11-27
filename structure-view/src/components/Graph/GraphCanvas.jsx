@@ -6,14 +6,19 @@ const GraphCanvas = ({
   isDirected, 
   currentStepData = {}, 
   showWeights = false,
-  onNodeDrag 
+  onNodeDrag,
+  isDarkMode = false 
 }) => {
   const canvasRef = useRef(null);
+  
   const viewState = useRef({ scale: 1, offsetX: 0, offsetY: 0 });
   
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  // --- NOVO: Estado para forçar redesenho no resize ---
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const { 
     visited = new Set(), 
@@ -24,17 +29,58 @@ const GraphCanvas = ({
   } = currentStepData;
 
   const NODE_RADIUS = 20;
-  const COLORS = {
-    default: '#ffffff',
-    visited: '#ffcc66', 
-    finished: '#404040', 
-    current: '#ff0000', 
-    edgeDefault: '#94a3b8', 
-    edgeHighlight: '#ff6666',
-    edgePath: '#ff0000', 
-    text: '#000',
-    textLight: '#fff'
+
+  // --- DEFINIÇÃO DE TEMAS ---
+  const THEMES = {
+    light: {
+      background: '#f8fafc', 
+      nodeDefault: '#ffffff',
+      nodeBorder: '#000000',
+      text: '#000000',
+      textLight: '#ffffff',
+      edgeDefault: '#94a3b8',
+      weightBox: '#ffffff',
+      weightText: '#333333'
+    },
+    dark: {
+      background: '#1e293b', 
+      nodeDefault: '#334155', 
+      nodeBorder: '#e2e8f0',  
+      text: '#f8fafc',        
+      textLight: '#f8fafc',
+      edgeDefault: '#64748b', 
+      weightBox: '#0f172a',   
+      weightText: '#f1f5f9'   
+    }
   };
+
+  const currentTheme = isDarkMode ? THEMES.dark : THEMES.light;
+
+  const COLORS = {
+    visited: '#f59e0b',  
+    finished: isDarkMode ? '#475569' : '#404040', 
+    current: '#ef4444',  
+    edgeHighlight: '#f87171', 
+    edgePath: '#dc2626',      
+    distText: '#3b82f6',      
+  };
+
+  // --- NOVO: Resize Observer ---
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvas.parentElement) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+        // Atualiza o estado com as novas dimensões do pai
+        // Isso força o componente a renderizar novamente
+        const rect = canvas.parentElement.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+    });
+
+    resizeObserver.observe(canvas.parentElement);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const screenToWorld = (screenX, screenY) => {
     const { scale, offsetX, offsetY } = viewState.current;
@@ -57,7 +103,8 @@ const GraphCanvas = ({
 
   const draw = (ctx, width, height) => {
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#f8fafc'; 
+    
+    ctx.fillStyle = currentTheme.background; 
     ctx.fillRect(0, 0, width, height);
 
     if (!positions || Object.keys(positions).length === 0) return;
@@ -103,17 +150,13 @@ const GraphCanvas = ({
             if (!positions[v]) return;
             const endPos = positions[v];
 
-            let strokeStyle = COLORS.edgeDefault;
+            let strokeStyle = currentTheme.edgeDefault; 
             let lineWidth = 2 / scale;
 
             const isShortestPath = predecessors && (predecessors[v] === u || predecessors[u] === v);
-            
-            // --- CORREÇÃO DA LÓGICA DE DESTAQUE ---
-            // 1. Se sou a origem (u) e sou o atual -> Destaca
-            // 2. Se sou o destino (v), sou o atual E modo não-direcionado -> Destaca (sem checar volta)
             const isAnimHighlight = !isShortestPath && (
-               (u === currentNode) || 
-               (!isDirected && v === currentNode)
+               (u === currentNode && graph[u].some(e => e.target === v)) || 
+               (!isDirected && v === currentNode && graph[v].some(e => e.target === u))
             );
 
             if (isShortestPath) {
@@ -148,20 +191,22 @@ const GraphCanvas = ({
         
         if (finished.has(nodeId)) ctx.fillStyle = COLORS.finished;
         else if (visited.has(nodeId)) ctx.fillStyle = COLORS.visited;
-        else ctx.fillStyle = COLORS.default;
+        else ctx.fillStyle = currentTheme.nodeDefault; 
 
         ctx.fill();
         
-        ctx.strokeStyle = (nodeId === currentNode) ? COLORS.current : '#000';
+        ctx.strokeStyle = (nodeId === currentNode) ? COLORS.current : currentTheme.nodeBorder;
         ctx.lineWidth = (nodeId === currentNode) ? 4 / scale : 2 / scale;
         ctx.stroke();
 
-        ctx.fillStyle = finished.has(nodeId) ? COLORS.textLight : COLORS.text;
+        ctx.fillStyle = finished.has(nodeId) ? currentTheme.textLight : currentTheme.text;
+        if (visited.has(nodeId) && !finished.has(nodeId)) ctx.fillStyle = '#000'; 
+
         ctx.fillText(nodeId, pos.x, pos.y);
 
         if (distances && distances[nodeId] !== undefined) {
             const d = distances[nodeId] === Infinity ? '∞' : distances[nodeId];
-            ctx.fillStyle = 'blue';
+            ctx.fillStyle = COLORS.distText;
             ctx.font = `bold 14px Arial`;
             ctx.fillText(d, pos.x, pos.y - (NODE_RADIUS * 1.8));
             ctx.font = `bold 16px Arial`;
@@ -171,7 +216,7 @@ const GraphCanvas = ({
     ctx.restore();
   };
 
-  // HELPERS
+  // HELPERS VISUAIS
   const drawLine = (ctx, start, end, directed, scale) => {
     const angle = Math.atan2(end.y - start.y, end.x - start.x);
     const r = NODE_RADIUS;
@@ -208,10 +253,11 @@ const GraphCanvas = ({
     const midX = (start.x + end.x) / 2;
     const midY = (start.y + end.y) / 2;
     ctx.save();
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = currentTheme.weightBox;
     const boxSize = 20 / scale;
     ctx.fillRect(midX - boxSize/2, midY - boxSize/2, boxSize, boxSize);
-    ctx.fillStyle = '#333';
+    
+    ctx.fillStyle = currentTheme.weightText;
     ctx.font = `bold ${12/scale}px Arial`;
     ctx.fillText(weight, midX, midY);
     ctx.restore();
@@ -257,6 +303,7 @@ const GraphCanvas = ({
     setDraggedNode(null);
   };
 
+  // --- EFEITO DE RENDERIZAÇÃO ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -270,9 +317,10 @@ const GraphCanvas = ({
 
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
+    
     draw(ctx, rect.width, rect.height);
 
-  }, [graph, positions, currentStepData, isDirected, showWeights]);
+  }, [graph, positions, currentStepData, isDirected, showWeights, isDarkMode, dimensions]); // Adicionado 'dimensions'
 
   return (
     <canvas 
@@ -281,6 +329,7 @@ const GraphCanvas = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      style={{ width: '100%', height: '100%', display: 'block' }}
     />
   );
 };

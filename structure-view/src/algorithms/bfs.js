@@ -2,12 +2,12 @@ import { naturalSort } from "../utils/graphUtils.js";
 
 const pseudoCode = [
     "BFS(s):",                                 // Linha 0
-    "  crie uma fila Q e enfileire s (cinza)", // Linha 1
+    "  crie uma fila Q e enfileire s (laranja)", // Linha 1
     "  enquanto Q não vazia:",                 // Linha 2
     "    u = desenfileire de Q",               // Linha 3
     "    para cada v em vizinhos(u):",         // Linha 4
     "      se v não visitado (branco):",       // Linha 5
-    "        marque v como visitado (cinza)",  // Linha 6
+    "        marque v como visitado (laranja)",  // Linha 6
     "        enfileire v em Q",                // Linha 7
     "    marque u como finalizado (preto)"     // Linha 8
 ];
@@ -71,7 +71,7 @@ function getSteps(rawGraph, start) {
         queue.push(start);
 
         // --- MUDANÇA 2: Destaca a criação da fila (Linha 1) ---
-        pushStep(1, `Criando fila Q e enfileirando ${start} (cinza).`, start);
+        pushStep(1, `Criando fila Q e enfileirando ${start} (laranja).`, start);
     }
 
     while (queue.length > 0) {
@@ -89,7 +89,7 @@ function getSteps(rawGraph, start) {
                 pushStep(5, `Vizinho ${v} é branco.`, v);
                 
                 state.visited.add(v); 
-                pushStep(6, `Marcando ${v} como visitado (cinza).`, v);
+                pushStep(6, `Marcando ${v} como visitado (laranja).`, v);
                 
                 queue.push(v);
                 pushStep(7, `Enfileirando ${v}.`, v);

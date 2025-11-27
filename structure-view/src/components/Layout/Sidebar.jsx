@@ -19,10 +19,10 @@ const Sidebar = ({ isOpen, isDarkMode, toggleTheme, onItemClick }) => {
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Início', path: '/home' },
     { icon: <Share2 size={20} />, label: 'Algoritmos', path: '/algorithms' },
-    { icon: <BookOpen size={20} />, label: 'Aulas', path: '/classes' }, 
-    { icon: <Box size={20} />, label: 'Problema Atual', path: '/problem' },
-    { icon: <Archive size={20} />, label: 'Problemas Passados', path: '/history' },
-    { icon: <BarChart3 size={20} />, label: 'Resultados', path: '/results' },
+    { icon: <BookOpen size={20} />, label: 'Conteúdos', path: '/classes' }, 
+    { icon: <Box size={20} />, label: 'Exercícios', path: '/problem' },
+    //{ icon: <Archive size={20} />, label: 'Problemas Passados', path: '/history' },
+    //{ icon: <BarChart3 size={20} />, label: 'Resultados', path: '/results' },
   ];
 
   const styles = {
