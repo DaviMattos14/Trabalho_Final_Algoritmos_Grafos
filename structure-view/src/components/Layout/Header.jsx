@@ -1,8 +1,10 @@
 import React from 'react';
-import { Menu, UserCircle, ArrowLeft } from 'lucide-react';
+import { Menu, UserCircle, ArrowLeft, LogOut } from 'lucide-react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Importa o contexto
 
 const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
+  const { user, logout } = useAuth(); // Pega o usuário e a função de logout
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -21,6 +23,11 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
 
   // Define qual título mostrar
   const displayTitle = isVisualizer && algoParam ? algoNames[algoParam] : title;
+
+  const handleLogout = () => {
+      logout();
+      navigate('/home'); // Redireciona para Home após sair
+  };
 
   const styles = {
     container: {
@@ -68,6 +75,28 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
       fontSize: '0.9rem',
       transition: 'background 0.2s'
     },
+    logoutBtn: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+        backgroundColor: '#dc2626ff',
+        color: isDarkMode ? '#ffffffff' : '#ffffffff', // Vermelho
+        border: `1px solid ${isDarkMode ? '#dc2626ff' : '#dc2626ff'}`,
+        padding: '6px 12px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: '500',
+        fontSize: '0.9rem',
+        transition: 'all 0.2s'
+    },
+    userText: {
+        color: isDarkMode ? '#cbd5e1' : '#475569',
+        fontWeight: '600',
+        marginRight: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px'
+    },
     divider: {
         width: '1px',
         height: '24px',
@@ -79,12 +108,12 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
   return (
     <header style={styles.container}>
       <div style={styles.leftGroup}>
-        {/* 1. Botão da Sidebar (Sempre visível) */}
+        {/* 1. Botão da Sidebar */}
         <button onClick={toggleSidebar} style={styles.iconBtn} title="Menu">
           <Menu size={24} />
         </button>
 
-        {/* 2. Separador e Botão Voltar (Apenas no Visualizer) */}
+        {/* 2. Botão Voltar (Visualizer) */}
         {isVisualizer && (
             <>
                 <div style={styles.divider}></div>
@@ -98,18 +127,30 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
             </>
         )}
 
-        {/* 3. Título da Página ou do Algoritmo */}
+        {/* 3. Título */}
         <h1 style={styles.title}>{displayTitle}</h1>
       </div>
 
       <div>
-        <button 
-          onClick={onLoginClick} 
-          style={styles.loginBtn}
-        >
-          <UserCircle size={18} />
-          Entrar / Registrar
-        </button>
+        {user ? (
+            // ESTADO LOGADO
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={styles.userText}>
+                    <UserCircle size={20} />
+                    Olá, {user.name || user.email.split('@')[0]}
+                </span>
+                <button onClick={handleLogout} style={styles.logoutBtn} title="Sair da conta">
+                    <LogOut size={16} />
+                    Sair
+                </button>
+            </div>
+        ) : (
+            // ESTADO DESLOGADO
+            <button onClick={onLoginClick} style={styles.loginBtn}>
+                <UserCircle size={18} />
+                Entrar / Registrar
+            </button>
+        )}
       </div>
     </header>
   );
