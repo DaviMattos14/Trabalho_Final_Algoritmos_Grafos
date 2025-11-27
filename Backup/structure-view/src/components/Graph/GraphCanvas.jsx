@@ -49,7 +49,7 @@ const GraphCanvas = ({
       nodeBorder: '#ffffffff',  
       text: '#000000ff',        
       textLight: '#f8fafc',
-      edgeDefault: '#9dabbeff', 
+      edgeDefault: '#64748b', 
       weightBox: '#0f172a',   
       weightText: '#f1f5f9'   
     }
