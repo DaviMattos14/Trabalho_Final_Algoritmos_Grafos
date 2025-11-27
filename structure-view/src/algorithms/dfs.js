@@ -23,7 +23,8 @@ function getSteps(graph, start) {
         status: "Pronto para iniciar."
     };
 
-    function pushStep(line, status, node) {
+    // --- ALTERAÇÃO: Adicionado highlightAll ---
+    function pushStep(line, status, node, highlightEdges = false, highlightAll = false) {
         history.push({
             visited: new Set(state.visited),
             finished: new Set(state.finished),
@@ -31,7 +32,9 @@ function getSteps(graph, start) {
             queueSnapshot: [...stack], 
             node: node,
             line: line,
-            status: status
+            status: status,
+            highlightEdges: highlightEdges,
+            highlightAll: highlightAll // <--- Nova flag
         });
     }
 
@@ -46,15 +49,27 @@ function getSteps(graph, start) {
 
         const neighbors = [...(graph[u] || [])].sort((a, b) => naturalSort(a.target, b.target));
 
+        // --- MUDANÇA VISUAL ---
+        // Antes de iterar um por um, destaca TODAS as saídas possíveis
+        if (neighbors.length > 0) {
+            pushStep(2, `Analisando ${neighbors.length} vizinhos de ${u}...`, u, false, true);
+        } else {
+            pushStep(2, `Nó ${u} não tem vizinhos.`, u);
+        }
+
         for (const edge of neighbors) {
             const v = edge.target;
-            pushStep(2, `Checando vizinho ${v}`, v);
+            
+            // Agora foca em um específico (highlightEdges=true, highlightAll=false)
+            pushStep(2, `Checando vizinho ${v}`, v, true); 
             
             if (!state.visited.has(v)) {
                 pushStep(3, `Vizinho ${v} é branco.`, v);
+                
                 pushStep(4, `Chamando DFS(${v})`, v);
                 dfs(v); 
-                pushStep(2, `Retornando para ${u} (após ${v})`, u);
+                
+                pushStep(2, `Retornando para ${u} (após ${v})`, u, true);
             } else {
                 pushStep(3, `Vizinho ${v} já visitado.`, v);
             }

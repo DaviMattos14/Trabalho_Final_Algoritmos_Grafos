@@ -16,8 +16,6 @@ const GraphCanvas = ({
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNode, setDraggedNode] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  
-  // --- NOVO: Estado para forçar redesenho no resize ---
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const { 
@@ -25,12 +23,15 @@ const GraphCanvas = ({
     finished = new Set(), 
     node: currentNode = null,
     distances = null,
-    predecessors = null 
+    predecessors = null,
+    // --- NOVAS FLAGS DE CONTROLE ---
+    highlightEdges = false, // Mantido para compatibilidade
+    highlightAll = false,   // Destaca todas as saídas
+    targetNode = null       // Destaca uma aresta específica
   } = currentStepData;
 
   const NODE_RADIUS = 20;
 
-  // --- DEFINIÇÃO DE TEMAS ---
   const THEMES = {
     light: {
       background: '#f8fafc', 
@@ -44,9 +45,9 @@ const GraphCanvas = ({
     },
     dark: {
       background: '#1e293b', 
-      nodeDefault: '#334155', 
-      nodeBorder: '#e2e8f0',  
-      text: '#f8fafc',        
+      nodeDefault: '#fdfdfdff', 
+      nodeBorder: '#ffffffff',  
+      text: '#000000ff',        
       textLight: '#f8fafc',
       edgeDefault: '#64748b', 
       weightBox: '#0f172a',   
@@ -58,21 +59,18 @@ const GraphCanvas = ({
 
   const COLORS = {
     visited: '#f59e0b',  
-    finished: isDarkMode ? '#475569' : '#404040', 
+    finished: isDarkMode ? '#000000ff' : '#000000ff', 
     current: '#ef4444',  
     edgeHighlight: '#f87171', 
     edgePath: '#dc2626',      
     distText: '#3b82f6',      
   };
 
-  // --- NOVO: Resize Observer ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !canvas.parentElement) return;
 
     const resizeObserver = new ResizeObserver(() => {
-        // Atualiza o estado com as novas dimensões do pai
-        // Isso força o componente a renderizar novamente
         const rect = canvas.parentElement.getBoundingClientRect();
         setDimensions({ width: rect.width, height: rect.height });
     });
@@ -154,10 +152,26 @@ const GraphCanvas = ({
             let lineWidth = 2 / scale;
 
             const isShortestPath = predecessors && (predecessors[v] === u || predecessors[u] === v);
-            const isAnimHighlight = !isShortestPath && (
-               (u === currentNode && graph[u].some(e => e.target === v)) || 
-               (!isDirected && v === currentNode && graph[v].some(e => e.target === u))
-            );
+            
+            // --- LÓGICA DE DESTAQUE REFINADA ---
+            let isAnimHighlight = false;
+
+            if (!isShortestPath) {
+                // Caso 1: Origem é o nó atual
+                if (u === currentNode) {
+                    if (highlightAll) isAnimHighlight = true; // Destaca todas as saídas
+                    if (targetNode === v) isAnimHighlight = true; // Destaca alvo específico
+                    // Fallback legado
+                    if (highlightEdges && !targetNode && !highlightAll) isAnimHighlight = true; 
+                }
+                
+                // Caso 2: Grafo não direcionado (destaca vindo do destino)
+                if (!isDirected && v === currentNode) {
+                    if (highlightAll) isAnimHighlight = true;
+                    if (targetNode === u) isAnimHighlight = true;
+                    if (highlightEdges && !targetNode && !highlightAll) isAnimHighlight = true;
+                }
+            }
 
             if (isShortestPath) {
                 strokeStyle = COLORS.edgePath;
@@ -256,7 +270,6 @@ const GraphCanvas = ({
     ctx.fillStyle = currentTheme.weightBox;
     const boxSize = 20 / scale;
     ctx.fillRect(midX - boxSize/2, midY - boxSize/2, boxSize, boxSize);
-    
     ctx.fillStyle = currentTheme.weightText;
     ctx.font = `bold ${12/scale}px Arial`;
     ctx.fillText(weight, midX, midY);
@@ -303,7 +316,6 @@ const GraphCanvas = ({
     setDraggedNode(null);
   };
 
-  // --- EFEITO DE RENDERIZAÇÃO ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -320,7 +332,7 @@ const GraphCanvas = ({
     
     draw(ctx, rect.width, rect.height);
 
-  }, [graph, positions, currentStepData, isDirected, showWeights, isDarkMode, dimensions]); // Adicionado 'dimensions'
+  }, [graph, positions, currentStepData, isDirected, showWeights, isDarkMode, dimensions]);
 
   return (
     <canvas 

@@ -2,7 +2,7 @@ import { naturalSort } from "../utils/graphUtils.js";
 
 const pseudoCode = [
     "TopologicalSort(u):",
-    "  marcar u como visitado (laranja)",
+    "  marcar u como visitado (cinza)",
     "  para cada v em vizinhos(u):",
     "    se v não visitado (branco):",
     "      TopologicalSort(v)",
@@ -24,7 +24,8 @@ function getSteps(graph, start) {
         status: "Pronto para iniciar."
     };
 
-    function pushStep(line, status, node) {
+    // --- ALTERAÇÃO: Parâmetros de destaque ---
+    function pushStep(line, status, node, highlightEdges = false, highlightAll = false) {
         history.push({
             visited: new Set(state.visited),
             finished: new Set(state.finished),
@@ -32,7 +33,9 @@ function getSteps(graph, start) {
             queueSnapshot: [...topoList], 
             node: node,
             line: line,
-            status: status
+            status: status,
+            highlightEdges: highlightEdges,
+            highlightAll: highlightAll // <--- Nova flag
         });
     }
 
@@ -42,19 +45,30 @@ function getSteps(graph, start) {
         pushStep(0, `Chamando TopologicalSort(${u})`, u);
 
         state.visited.add(u);
-        pushStep(1, `Visitando ${u} (laranja)`, u);
+        pushStep(1, `Visitando ${u} (cinza)`, u);
 
         const neighbors = [...(graph[u] || [])].sort((a, b) => naturalSort(a.target, b.target));
 
+        // --- MUDANÇA VISUAL: Destaca todas as saídas ---
+        if (neighbors.length > 0) {
+            pushStep(2, `Analisando conexões de ${u}...`, u, false, true);
+        } else {
+            pushStep(2, `Nó ${u} não tem saídas.`, u);
+        }
+
         for (const edge of neighbors) {
             const v = edge.target;
-            pushStep(2, `Checando vizinho ${v}`, v);
+            
+            // Destaque individual
+            pushStep(2, `Checando vizinho ${v}`, v, true);
             
             if (!state.visited.has(v)) {
                 pushStep(3, `Vizinho ${v} é branco.`, v);
                 pushStep(4, `Recursão para ${v}`, v);
                 dfs(v);
-                pushStep(2, `Retornando para ${u} (após ${v})`, u);
+                
+                // Destaque na volta
+                pushStep(2, `Retornando para ${u} (após ${v})`, u, true);
             } else {
                 pushStep(3, `Vizinho ${v} já visitado. Ignorando.`, v);
             }

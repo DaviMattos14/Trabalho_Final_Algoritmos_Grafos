@@ -1,15 +1,15 @@
 import { naturalSort } from "../utils/graphUtils.js";
 
 const pseudoCode = [
-    "BFS(s):",                                 // Linha 0
-    "  crie uma fila Q e enfileire s (laranja)", // Linha 1
-    "  enquanto Q não vazia:",                 // Linha 2
-    "    u = desenfileire de Q",               // Linha 3
-    "    para cada v em vizinhos(u):",         // Linha 4
-    "      se v não visitado (branco):",       // Linha 5
-    "        marque v como visitado (laranja)",  // Linha 6
-    "        enfileire v em Q",                // Linha 7
-    "    marque u como finalizado (preto)"     // Linha 8
+    "BFS(s):",
+    "  crie uma fila Q e enfileire s (cinza)", 
+    "  enquanto Q não vazia:",                 
+    "    u = desenfileire de Q",               
+    "    para cada v em vizinhos(u):",         
+    "      se v não visitado (branco):",       
+    "        marque v como visitado (cinza)",  
+    "        enfileire v em Q",                
+    "    marque u como finalizado (preto)"     
 ];
 
 function getSteps(rawGraph, start) {
@@ -36,7 +36,6 @@ function getSteps(rawGraph, start) {
     for (let key in graph) {
         graph[key].sort((a, b) => naturalSort(a.target, b.target));
     }
-    // -----------------------------------
 
     const state = { 
         visited: new Set(), 
@@ -48,7 +47,8 @@ function getSteps(rawGraph, start) {
         status: "Pronto para iniciar." 
     };
 
-    function pushStep(line, status, node) {
+    // --- ALTERAÇÃO: Adicionado highlightAll ---
+    function pushStep(line, status, node, highlightEdges = false, highlightAll = false) {
         history.push({
             visited: new Set(state.visited),
             finished: new Set(state.finished),
@@ -56,40 +56,47 @@ function getSteps(rawGraph, start) {
             queueSnapshot: [...queue],
             node: node, 
             line: line, 
-            status: status
+            status: status,
+            highlightEdges: highlightEdges,
+            highlightAll: highlightAll // <--- Nova flag
         });
     }
 
-    // Estado inicial (Reset)
     pushStep(-1, "Pronto para iniciar.", null);
     
     if (graph[start]) {
-        // --- MUDANÇA 1: Destaca a chamada da função (Linha 0) ---
         pushStep(0, `Chamando BFS(${start})...`, start);
 
         state.visited.add(start);
         queue.push(start);
 
-        // --- MUDANÇA 2: Destaca a criação da fila (Linha 1) ---
-        pushStep(1, `Criando fila Q e enfileirando ${start} (laranja).`, start);
+        pushStep(1, `Criando fila Q e enfileirando ${start} (cinza).`, start);
     }
 
     while (queue.length > 0) {
-        // --- MUDANÇA 3: Destaca a verificação do loop (Linha 2) ---
-        pushStep(2, `Verificando se a fila está vazia... (Tamanho: ${queue.length})`, null);
+        pushStep(2, `Verificando fila... (Tamanho: ${queue.length})`, null);
 
         const u = queue.shift();
         pushStep(3, `Desenfileirando ${u}.`, u);
 
+        // --- MUDANÇA VISUAL ---
+        // Destaca todas as conexões antes de verificar uma a uma
+        const neighbors = graph[u] || [];
+        if (neighbors.length > 0) {
+            pushStep(4, `Analisando conexões de ${u}...`, u, false, true);
+        }
+
         for (const edge of graph[u]) {
             const v = edge.target;
-            pushStep(4, `Checando vizinho ${v}`, v);
+            
+            // Destaque individual
+            pushStep(4, `Checando vizinho ${v}`, v, true); 
 
             if (!state.visited.has(v)) {
                 pushStep(5, `Vizinho ${v} é branco.`, v);
                 
                 state.visited.add(v); 
-                pushStep(6, `Marcando ${v} como visitado (laranja).`, v);
+                pushStep(6, `Marcando ${v} como visitado (cinza).`, v);
                 
                 queue.push(v);
                 pushStep(7, `Enfileirando ${v}.`, v);

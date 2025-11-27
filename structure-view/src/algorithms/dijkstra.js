@@ -16,31 +16,31 @@ const pseudoCode = [
 function getSteps(rawGraph, start, isDirected) {
     const history = [];
     
-    // --- 1. PREPARAÇÃO DO GRAFO ---
+    // --- PREPARAÇÃO DO GRAFO ---
     let graph;
 
     if (isDirected) {
         graph = rawGraph;
     } else {
-        // Simetriza se não direcionado
         graph = {};
+        // 1. Copia
+        for (let key in rawGraph) {
+            graph[key] = rawGraph[key].map(e => ({...e}));
+        }
+        // 2. Simetria
         for (let u in rawGraph) {
-            if (!graph[u]) graph[u] = [];
-            rawGraph[u].forEach(edge => {
-                // Ida
-                if (!graph[u].some(e => e.target === edge.target)) graph[u].push({ ...edge });
-                
-                // Volta
+            for (let edge of rawGraph[u]) {
                 const v = edge.target;
+                const w = edge.weight;
                 if (!graph[v]) graph[v] = [];
                 if (!graph[v].some(e => e.target === u)) {
-                    graph[v].push({ target: u, weight: edge.weight });
+                    graph[v].push({ target: u, weight: w });
                 }
-            });
+            }
         }
     }
 
-    const nodes = Object.keys(graph).sort(naturalSort);
+    const nodes = Object.keys(graph).sort((a, b) => naturalSort(a, b));
     
     const dist = {};
     const visited = new Set(); 
@@ -58,7 +58,8 @@ function getSteps(rawGraph, start, isDirected) {
         processing.add(start);
     }
 
-    function pushStep(line, status, u) {
+    // --- ALTERAÇÃO: Parâmetro highlightAll ---
+    function pushStep(line, status, u, highlightEdges = false, highlightAll = false) {
         const pqSnapshot = [...pq].sort((a, b) => dist[a] - dist[b]);
         const pqText = pqSnapshot.map(n => `${n}(${dist[n] === Infinity ? '∞' : dist[n]})`);
 
@@ -73,10 +74,12 @@ function getSteps(rawGraph, start, isDirected) {
             finishedOrder: distList,
             queueSnapshot: pqText,        
             distances: {...dist},
-            predecessors: {...predecessors}, 
+            predecessors: {...predecessors},
             node: u,
             line: line,
-            status: status
+            status: status,
+            highlightEdges: highlightEdges,
+            highlightAll: highlightAll // <--- Nova Propriedade
         });
     }
 
@@ -99,14 +102,22 @@ function getSteps(rawGraph, start, isDirected) {
 
         const neighbors = [...(graph[u] || [])].sort((a, b) => naturalSort(a.target, b.target));
 
+        // --- MUDANÇA VISUAL: Destaca todas as saídas antes do loop ---
+        if (neighbors.length > 0) {
+            pushStep(4, `Analisando saídas de ${u}...`, u, false, true);
+        } else {
+            pushStep(4, `Nó ${u} não tem saídas.`, u);
+        }
+
         for (let edge of neighbors) {
             const v = edge.target;
             const weight = edge.weight;
 
-            if (visited.has(v)) continue;
-            if (!processing.has(v)) processing.add(v);
+            if (visited.has(v)) continue; 
+            if (!processing.has(v)) processing.add(v); 
 
-            pushStep(4, `Checando ${v} (Peso: ${weight})`, v);
+            // Destaque individual da aresta sendo testada
+            pushStep(4, `Checando ${v} (Peso: ${weight})`, v, true);
 
             const alt = dist[u] + weight;
             pushStep(5, `Caminho: ${dist[u]} + ${weight} = ${alt}. Antigo: ${dist[v]===Infinity?'∞':dist[v]}`, v);
@@ -114,7 +125,8 @@ function getSteps(rawGraph, start, isDirected) {
             if (alt < dist[v]) {
                 dist[v] = alt;
                 predecessors[v] = u; 
-                pushStep(6, `Relaxando! Nova dist[${v}] = ${alt}`, v);
+                // Destaque da aresta ao relaxar
+                pushStep(6, `Relaxando! Nova dist[${v}] = ${alt}`, v, true);
             }
         }
     }

@@ -11,9 +11,10 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
   const [dragStartNode, setDragStartNode] = useState(null); 
   const [mousePos, setMousePos] = useState({x:0, y:0});
   
-  // Estado para forçar update no resize
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
+  
+  // Guarda o tamanho anterior para calcular o deslocamento (shift)
+  const prevSize = useRef({ w: 0, h: 0 });
   const lastRightClick = useRef(0);
 
   const THEME = {
@@ -27,27 +28,49 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
     weightText: isDarkMode ? '#f1f5f9' : '#000000'
   };
 
-  // --- RESIZE OBSERVER ---
+  // --- RESIZE OBSERVER COM AUTO-CENTRALIZAÇÃO ---
   useEffect(() => {
       const canvas = canvasRef.current;
       if (!canvas || !canvas.parentElement) return;
 
       const resizeObserver = new ResizeObserver(() => {
           const rect = canvas.parentElement.getBoundingClientRect();
-          // Atualiza estado para disparar re-render
-          setDimensions({ width: rect.width, height: rect.height });
+          const newW = rect.width;
+          const newH = rect.height;
+          
+          if (prevSize.current.w > 0 && prevSize.current.h > 0) {
+              const dx = (newW - prevSize.current.w) / 2;
+              const dy = (newH - prevSize.current.h) / 2;
+              
+              if (dx !== 0 || dy !== 0) {
+                  setNodes(prevNodes => prevNodes.map(n => ({
+                      ...n, 
+                      x: n.x + dx, 
+                      y: n.y + dy 
+                  })));
+              }
+          }
+          
+          prevSize.current = { w: newW, h: newH };
+          setDimensions({ width: newW, height: newH });
       });
 
       resizeObserver.observe(canvas.parentElement);
       return () => resizeObserver.disconnect();
   }, []);
 
-  // 1. Inicialização (Mantida)
+  // 1. Inicialização
   useEffect(() => {
     const keys = Object.keys(initialGraph).sort();
+    
     if (keys.length === 0) { setNodes([]); setEdges([]); return; }
 
-    const layout = calculateLayout(initialGraph, keys[0], 800, 500);
+    const currentW = prevSize.current.w || 800;
+    const currentH = prevSize.current.h || 500;
+    
+    const layout = calculateLayout(initialGraph, keys[0], currentW, currentH);
+    
+    // Bounding Box para centralizar
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     const posKeys = Object.keys(layout);
     if(posKeys.length > 0) {
@@ -58,14 +81,24 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
         });
         if(maxX === minX) maxX += 100;
         if(maxY === minY) maxY += 100;
-    } else { minX = 0; maxX = 800; minY = 0; maxY = 500; }
+    } else { minX = 0; maxX = currentW; minY = 0; maxY = currentH; }
 
-    const newNodes = keys.map(k => {
-        const relativeX = layout[k] ? layout[k].x - minX : 0;
-        const relativeY = layout[k] ? layout[k].y - minY : 0;
-        const centerX = 400 - (maxX - minX) / 2;
-        const centerY = 250 - (maxY - minY) / 2;
-        return { id: k, x: relativeX + centerX, y: relativeY + centerY };
+    // Tamanho atual do container
+    const rect = canvasRef.current ? canvasRef.current.getBoundingClientRect() : { width: currentW, height: currentH };
+    
+    // --- RE-CENTRALIZAÇÃO ROBUSTA ---
+    // Removemos o bloco "newNodes" problemático e usamos apenas este:
+    const finalNodes = keys.map(k => {
+        const p = layout[k] || {x:0, y:0};
+        // Traz para 0,0 relativo ao topo-esquerda do grafo
+        const zeroX = p.x - minX;
+        const zeroY = p.y - minY;
+        // Move para o centro da tela
+        return {
+            id: k,
+            x: zeroX + (rect.width - (maxX - minX)) / 2,
+            y: zeroY + (rect.height - (maxY - minY)) / 2
+        };
     });
 
     const newEdges = [];
@@ -75,23 +108,27 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
         });
     });
 
-    setNodes(newNodes);
+    setNodes(finalNodes);
     setEdges(newEdges);
+    
+    if (canvasRef.current) {
+        const r = canvasRef.current.getBoundingClientRect();
+        prevSize.current = { w: r.width, h: r.height };
+    }
   }, [initialGraph]); 
 
-  // 2. Loop de Desenho (Depende de dimensions)
+  // 2. Loop de Desenho
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.parentElement.getBoundingClientRect(); // Pega do pai atualizado
+    const rect = canvas.parentElement.getBoundingClientRect(); 
     
-    // Ajusta tamanhos
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    canvas.style.width = '100%'; // CSS cuida do visual
+    canvas.style.width = '100%';
     canvas.style.height = '100%';
     
     ctx.scale(dpr, dpr);
@@ -150,11 +187,9 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
         ctx.fillText(node.id, node.x, node.y);
     });
 
-  }, [nodes, edges, dragStartNode, mousePos, draggedNode, isDarkMode, dimensions]); // Roda ao redimensionar
+  }, [nodes, edges, dragStartNode, mousePos, draggedNode, isDarkMode, dimensions]);
 
-  // ... (Helpers de Desenho e Eventos mantidos iguais, omitidos por brevidade) ...
-  // Copie os helpers drawArrow, drawArrowHead, getCoords, etc. do código anterior
-  
+  // Helpers
   const drawArrow = (ctx, fromX, fromY, toX, toY) => {
     const angle = Math.atan2(toY - fromY, toX - fromX);
     const r = 20; 
@@ -175,7 +210,6 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
       ctx.lineTo(toX, toY); ctx.fill();
   };
 
-  // No getCoords, usamos getBoundingClientRect que é atualizado pelo browser
   const getCoords = (e) => { const rect = canvasRef.current.getBoundingClientRect(); return { x: e.clientX - rect.left, y: e.clientY - rect.top }; };
   const getNodeAt = (x, y) => { return nodes.find(n => Math.sqrt((n.x - x)**2 + (n.y - y)**2) < 25); };
   const getDistanceToSegmentSquared = (p, v, w) => {
@@ -279,10 +313,11 @@ const GraphEditor = ({ initialGraph, onSave, onClose, isDarkMode = false }) => {
         }}>
             <span style={{fontSize: '0.9rem', color: THEME.edge}}>
                 🖱️ Esq: <b>Criar Nó</b> | 
-                🖱️ Dir e Arrasta: <b>Mover Nó</b> | 
-                ⚫ Arraste entre nós: <b>Criar Aresta</b> <br />
-                ❌ Duplo clique dir: <b>Remover Nó</b> |
-                ❌ Duplo clique esq: <b>Remover Aresta</b>
+                ⚫ Clique + Arrastar entre nós: <b>Criar Aresta</b> | 
+                ⇧+Esq: <b>Mudar Peso</b> <br/>
+                🖱️ Dir: <b>Mover Nó</b> | 
+                ❌ 2x Dir: <b>Apagar Aresta</b> | 
+                ❌ 2x Esq: <b>Apagar Nó</b>
             </span>
             <button onClick={() => {setNodes([]); setEdges([])}} style={{
                 padding: '4px 8px', border: `1px solid ${THEME.nodeBorder}`, borderRadius: '4px', cursor: 'pointer',
