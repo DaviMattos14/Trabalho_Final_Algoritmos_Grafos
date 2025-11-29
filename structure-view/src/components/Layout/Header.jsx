@@ -23,7 +23,7 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
   // 2. Nomes para Rotas Específicas (Aulas)
   const routeTitles = {
       '/classes/graph-rep': 'Representação de Grafos',
-      '/classes/linkedlis': 'Lista Encadeada',
+      '/classes/linked-list': 'Lista Encadeada',
       '/classes/dfs': 'Busca em Profundidade (DFS)',
       // Adicione outras aulas aqui futuramente
   };
