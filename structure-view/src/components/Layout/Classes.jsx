@@ -52,6 +52,3 @@ const Classes = () => {
 };
 
 export default Classes;
-
-// Nota: Você precisará criar um componente PageContainer.jsx para envolver
-// o Header e o MainLayout, mas por agora, apenas um esqueleto resolve.
