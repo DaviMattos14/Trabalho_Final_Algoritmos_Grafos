@@ -1,0 +1,48 @@
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* 1. O Resete Fundamental */
+html {
+  height: 100%;
+  /* Garante scroll suave */
+  scroll-behavior: smooth;
+}
+
+body {
+  /* Remove a margem branca de 8px padrão dos navegadores */
+  margin: 0;
+  padding: 0;
+  
+  /* Garante altura total */
+  min-height: 100vh;
+  width: 100%;
+  
+  /* Define a cor de fundo padrão para evitar flashes brancos */
+  background-color: #f8f9fa;
+  
+  /* Melhora a renderização de fontes */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 2. O Container do React */
+/* Isso é crucial: faz a div onde o React roda ocupar a tela toda */
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 3. Reset de Box Model */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Remove estilos padrão de botões para facilitar customização */
+button {
+  font-family: inherit;
+}

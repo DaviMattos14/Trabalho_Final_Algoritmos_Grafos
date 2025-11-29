@@ -12,6 +12,8 @@ import { AuthProvider } from './context/AuthContext';
 import Classes from './pages/Classes';
 // --- NOVO IMPORT ---
 import GraphRepresentation from './pages/classes/GraphRepresentation'; 
+import LinkedListClass from './pages/classes/LinkedList';
+import DepthFirstSearchClass from './pages/classes/DepthFirstSearch';
 
 const ProtectedRoute = ({ children }) => {
     // ... (sua lógica de proteção) ...
@@ -37,6 +39,8 @@ function App() {
               
               {/* --- NOVA ROTA ADICIONADA AQUI --- */}
               <Route path="/classes/graph-rep" element={<GraphRepresentation />} />
+              <Route path="/classes/linked-list" element={<LinkedListClass />} />
+              <Route path="/classes/dfs" element={<DepthFirstSearchClass />} />
           </Route>
         </Routes>
       </BrowserRouter>
