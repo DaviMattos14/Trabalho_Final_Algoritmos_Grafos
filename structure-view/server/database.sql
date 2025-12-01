@@ -102,7 +102,14 @@ VALUES (
   'DFS'
 );
 
+-- Exercícios de busca em largura
 
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Qual é a ordem de visita da BFS a partir do nó A?',
+  '{"graph":{"A":[["B",1],["C",1]],"B":[["D",1]],"C":[["E",1]],"D":[],"E":[]},"options":["A, B, C, D, E","A, C, B, E, D","B, A, C, D, E","A, B, D, C, E"],"expected":"A,B,C,D,E","correct":"A,B,C,D,E"}',
+  'BFS'
+);
 
 
 
