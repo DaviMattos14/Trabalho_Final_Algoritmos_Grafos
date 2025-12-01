@@ -90,9 +90,12 @@ const ProblemsList = () => {
       // Verificamos também pelo título para ser mais robusto caso o ID mude
       if (item.id === 2 || item.title.includes('Tempos') || item.title.includes('Start and Finish')) {
           navigate('/problem/dfs-start-finish-time');
-      } else {
+      } if (item.title.includes("Múltipla escolha -")) {
+          navigate('/problem/form', { state: item });
+      }
+      else {
           // Redirecionamento genérico para o Visualizador
-          navigate(`/visualizer?algo=${getAlgoParam(item.title)}`);
+          // navigate(`/visualizer?algo=${getAlgoParam(item.title)}`);
       }
   };
 
