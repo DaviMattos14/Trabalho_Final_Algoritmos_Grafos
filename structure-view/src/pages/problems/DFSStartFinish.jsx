@@ -9,97 +9,71 @@ const DFSStartFinish = () => {
   const { user } = useAuth();
 
   const EXERCISE_ID = 2;
-  const CACHE_KEY = `exercise_answer_${EXERCISE_ID}`;
 
-  // Estado para armazenar o gabarito dinâmico vindo do banco
-  const [correctAnswers, setCorrectAnswers] = useState(null);
-  
+  const correctedAnswers = {
+      start0: 1, end0: 12,
+      start2: 2, end2: 11,
+      start3: 3, end3: 4,
+      start4: 5, end4: 10,
+      start1: 6, end1: 9,
+      start5: 7, end5: 8
+  };
+
   const [inputs, setInputs] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
 
-  // 1. Carregar Gabarito (Banco ou Cache) e Progresso do Usuário
+  // --- CARREGAMENTO DOS DADOS ---
   useEffect(() => {
-    const loadData = async () => {
+    const loadProgress = async () => {
+        if (!user) return;
+        
         try {
-            // A. Tenta pegar gabarito do cache
-            const cachedAnswer = sessionStorage.getItem(CACHE_KEY);
-            if (cachedAnswer) {
-                setCorrectAnswers(JSON.parse(cachedAnswer));
-            } else {
-                // B. Se não tiver, busca no banco
-                const exData = await api.getExerciseDetails(EXERCISE_ID);
-                if (exData.success && exData.exercise.answer) {
-                    // O banco retorna a resposta como string JSON, precisamos fazer o parse
-                    // Se o banco já retornar objeto (depende do driver), o JSON.parse pode falhar, então tratamos
-                    let parsedAnswer = exData.exercise.answer;
-                    if (typeof parsedAnswer === 'string') {
-                        parsedAnswer = JSON.parse(parsedAnswer);
-                    }
-                    
-                    setCorrectAnswers(parsedAnswer);
-                    sessionStorage.setItem(CACHE_KEY, JSON.stringify(parsedAnswer));
-                }
-            }
-
-            // C. Busca progresso do usuário
-            if (user) {
-                const pData = await api.getUserProgress(EXERCISE_ID, user.id);
-                if (pData && pData.success && pData.progress) {
-                    const savedInputs = JSON.parse(pData.progress.user_answer);
-                    setInputs(savedInputs);
-                }
+            const data = await api.getUserProgress(EXERCISE_ID, user.id);
+            
+            if (data && data.success && data.progress) {
+                // Se tiver resposta salva, converte de volta para objeto
+                const savedInputs = JSON.parse(data.progress.user_answer);
+                setInputs(savedInputs);
             }
         } catch (e) {
-            console.error("Erro ao carregar dados:", e);
-        } finally {
-            setLoadingData(false);
+            console.error("Erro ao carregar progresso:", e);
         }
     };
     
-    loadData();
+    loadProgress();
   }, [user]);
+  // ------------------------------
 
   const handleChange = (e) => {
     const val = e.target.value === '' ? '' : parseInt(e.target.value);
     setInputs(prev => ({ ...prev, [e.target.name]: val }));
   };
 
-  const checkCompletion = (currentInputs) => {
-      if (!correctAnswers) return false;
-      for (let key in correctAnswers) {
-          if (currentInputs[key] !== correctAnswers[key]) return false;
-      }
-      return true;
-  };
-
   const handleAutoSave = async () => {
     if (!user) return;
+
     setIsSaving(true);
     try {
-        const isCompleted = checkCompletion(inputs);
-        await api.submitExercise(EXERCISE_ID, user.id, inputs, isCompleted);
+        await api.submitExercise(EXERCISE_ID, user.id, inputs);
     } catch (error) {
-        console.error(error);
+        console.error("Erro ao salvar progresso:", error);
     } finally {
         setTimeout(() => setIsSaving(false), 500);
     }
   };
 
   const revealAnswers = () => {
-      if (!correctAnswers) return;
       if (window.confirm("Tem certeza? Tente resolver sozinho primeiro!")) {
-          setInputs(correctAnswers);
+          setInputs(correctedAnswers);
           setTimeout(handleAutoSave, 100);
       }
   };
 
   const getRowStatus = (id) => {
-      if (!correctAnswers) return 'neutral';
       const s = inputs[`start${id}`];
       const e = inputs[`end${id}`];
       if (s === undefined || s === '' || e === undefined || e === '') return 'neutral';
-      if (s === correctAnswers[`start${id}`] && e === correctAnswers[`end${id}`]) return 'correct';
+      if (s === correctedAnswers[`start${id}`] && e === correctedAnswers[`end${id}`]) return 'correct';
       return 'wrong';
   };
 
@@ -138,10 +112,6 @@ const DFSStartFinish = () => {
     </svg>
   );
 
-  if (loadingData) {
-      return <div style={{display:'flex', justifyContent:'center', padding:'50px', color:theme.textSec}}><Loader2 className="animate-spin"/> Carregando...</div>;
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: theme.bg, overflowY: 'auto' }}>
       
@@ -169,7 +139,7 @@ const DFSStartFinish = () => {
 
             <p style={{ color: theme.textSec, lineHeight: '1.6' }}>
                 Considere o grafo abaixo. Você inicia o algoritmo <b>DFS</b> no nó <b>0</b>. 
-                Assuma que os números dos vértices são usados como critério de desempate.
+                Preencha os tempos de início (start) e fim (finish).
             </p>
             
             <GraphSVG />
@@ -206,7 +176,7 @@ const DFSStartFinish = () => {
                                         type="number" name={`start${id}`} 
                                         value={inputs[`start${id}`] !== undefined ? inputs[`start${id}`] : ''}
                                         onChange={handleChange}
-                                        onBlur={handleAutoSave} 
+                                        onBlur={handleAutoSave}
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text }} 
                                     />
                                 </div>
@@ -216,7 +186,7 @@ const DFSStartFinish = () => {
                                         type="number" name={`end${id}`} 
                                         value={inputs[`end${id}`] !== undefined ? inputs[`end${id}`] : ''}
                                         onChange={handleChange}
-                                        onBlur={handleAutoSave} 
+                                        onBlur={handleAutoSave}
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text }} 
                                     />
                                 </div>

@@ -9,6 +9,7 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  charset: 'utf8mb4',
   ssl: process.env.DEVELOPMENT ? false : {
     rejectUnauthorized: false
   }
@@ -16,6 +17,11 @@ const dbConfig = {
 
 // Criar pool de conexões
 const pool = mysql.createPool(dbConfig);
+
+// Forçar o uso de UTF8MB4 em todas as conexões do pool
+pool.on('connection', function (connection) {
+  connection.query("SET NAMES 'utf8mb4'");
+});
 
 // Testar conexão
 pool.getConnection()
@@ -34,4 +40,3 @@ pool.getConnection()
   });
 
 export default pool;
-

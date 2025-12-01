@@ -110,7 +110,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             {isRegister ? 'Crie sua conta' : 'Bem-vindo de volta'}
         </h2>
         <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-            {isRegister ? 'Preencha os dados para começar' : 'Entre para acessar sua conta'}
+            {isRegister ? 'Preencha os dados para começar' : 'Entre para acessar seus grafos'}
         </p>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
