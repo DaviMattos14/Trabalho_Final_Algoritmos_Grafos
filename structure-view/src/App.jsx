@@ -14,6 +14,8 @@ import Classes from './pages/Classes';
 import GraphRepresentation from './pages/classes/GraphRepresentation'; 
 import LinkedListClass from './pages/classes/LinkedList';
 import DepthFirstSearchClass from './pages/classes/DepthFirstSearch';
+import ProblemsList from './pages/ProblemsList';
+import DFSStartFinish from './pages/problems/DFSStartFinish';
 
 const ProtectedRoute = ({ children }) => {
     // ... (sua lógica de proteção) ...
@@ -41,6 +43,11 @@ function App() {
               <Route path="/classes/graph-rep" element={<GraphRepresentation />} />
               <Route path="/classes/linked-list" element={<LinkedListClass />} />
               <Route path="/classes/dfs" element={<DepthFirstSearchClass />} />
+
+              {/* Rotas dos exercicios */}
+              <Route path="/problem" element={<ProblemsList />} />
+              <Route path="/problem/dfs-start-finish-time" element={<DFSStartFinish />} />
+
           </Route>
         </Routes>
       </BrowserRouter>
