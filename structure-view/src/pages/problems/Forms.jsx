@@ -102,7 +102,7 @@ export default function Forms() {
             </div>
             <div style={{ margin: "0 auto" }}>
               {
-                answer.graph ? <GraphViewer graph={answer.graph} showArrows={true}/> : null
+                answer.graph ? <GraphViewer graph={answer.graph} showArrows={true} showWeights={["DFS", "BFS"].includes(answer.topic)}/> : null
               }
             </div>
             <OptionsList answer={answer} state={[inputs, handleChange]} />

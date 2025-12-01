@@ -1,7 +1,7 @@
 import React from "react";
 import { useOutletContext } from "react-router-dom";
 
-export default function GraphViewer({ graph, showArrows = true }) {
+export default function GraphViewer({ graph, showArrows = true, showWeights = true }) {
   const nodes = Object.keys(graph);
   const { isDarkMode } = useOutletContext();
 
@@ -139,7 +139,7 @@ export default function GraphViewer({ graph, showArrows = true }) {
                 <text
                   x={(start.x + endAdjusted.x) / 2 - 15}
                   y={(start.y + endAdjusted.y) / 2 - 3}
-                  fill={currentTheme.weightText}
+                  fill={showWeights ? currentTheme.weightText : "transparent"}
                   fontSize="16"
                   fontWeight="bold"
                 >

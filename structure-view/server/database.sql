@@ -67,7 +67,7 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO exercises (title, answer, topic)
 VALUES (
   'Múltipla escolha - Com base no gráfico abaixo. Qual é uma ordenação topológica válida?',
-  '{"graph":{"A":[["B",1],["C",1]],"B":[["D",1]],"C":[["D",1]],"D":[]},"options":["A, B, C, D","C, A, B, D","B, A, C, D","A, D, B, C"],"expected":"A,B,C,D","correct":"A,B,C,D"}',
+  '{"graph":{"A":[["B",1],["C",1]],"B":[["D",1]],"C":[["D",1]],"D":[]},"options":["A, B, C, D","C, A, B, D","B, A, C, D","A, D, B, C"],"expected":"A, B, C, D","correct":"A, B, C, D"}',
   'Ordenação Topológica'
 );
 
@@ -98,7 +98,7 @@ VALUES (
 INSERT INTO exercises (title, answer, topic)
 VALUES (
   'Múltipla escolha - Qual é a ordem de visita a partir do nó S? (Usando busca em profundidade)',
-  '{"graph":{"S":[["A",1],["B",1]],"A":[["C",1]],"B":[["E",1]],"C":[["D",1]],"D":[],"E":[]},"options":["S, A, C, D, B, E","S, B, E, A, C, D","A, S, C, D, B, E","S, A, B, C, D, E"],"expected":"S,A,C,D,B,E","correct":"S,A,C,D,B,E"}',
+  '{"graph":{"S":[["A",1],["B",1]],"A":[["C",1]],"B":[["E",1]],"C":[["D",1]],"D":[],"E":[]},"options":["S, A, C, D, B, E","S, B, E, A, C, D","A, S, C, D, B, E","S, A, B, C, D, E"],"expected":"S, A, C, D, B, E","correct":"S, A, C, D, B, E"}',
   'DFS'
 );
 
@@ -107,7 +107,7 @@ VALUES (
 INSERT INTO exercises (title, answer, topic)
 VALUES (
   'Múltipla escolha - Qual é a ordem de visita da BFS a partir do nó A?',
-  '{"graph":{"A":[["B",1],["C",1]],"B":[["D",1]],"C":[["E",1]],"D":[],"E":[]},"options":["A, B, C, D, E","A, C, B, E, D","B, A, C, D, E","A, B, D, C, E"],"expected":"A,B,C,D,E","correct":"A,B,C,D,E"}',
+  '{"graph":{"A":[["B",1],["C",1]],"B":[["D",1]],"C":[["E",1]],"D":[],"E":[]},"options":["A, B, C, D, E","A, C, B, E, D","B, A, C, D, E","A, B, D, C, E"],"expected":"A, B, C, D, E","correct":"A, B, C, D, E"}',
   'BFS'
 );
 
