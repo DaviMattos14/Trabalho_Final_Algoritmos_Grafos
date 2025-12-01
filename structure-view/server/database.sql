@@ -52,7 +52,7 @@ VALUES (
     2, 
     'Tempos de Busca em Profundidade (DFS)', 
     'Grafos', 
-    '{"start0":0,"end0":12,"start2":1,"end2":10,"start3":2,"end3":3,"start4":4,"end4":9,"start1":7,"end1":8,"start5":6,"end5":7}',
+    '{"start0":0,"end0":11,"start2":1,"end2":10,"start3":2,"end3":3,"start4":4,"end4":9,"start1":5,"end1":8,"start5":6,"end5":7}',
     'Facil'
 )
 ON DUPLICATE KEY UPDATE 
