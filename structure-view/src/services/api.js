@@ -1,18 +1,30 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// --- MUDANÇA AQUI: Usamos caminho relativo ---
+// O Vite vai redirecionar '/api' para 'http://localhost:3001/api'
+const API_URL = '/api'; 
 
 export const api = {
   async login(email, password) {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email, password }),
       });
+
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Erro ao fazer login');
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao fazer login');
+      }
+
       return data;
     } catch (error) {
-      if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
+      // Mensagem genérica pois erros de proxy aparecem como erros de rede
+      if (error.message.includes('fetch') || error.message.includes('token')) {
+        throw new Error('Erro de conexão. Verifique se o backend está rodando.');
+      }
       throw error;
     }
   },
@@ -21,14 +33,20 @@ export const api = {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email, password, name }),
       });
+
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Erro ao registrar');
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao registrar');
+      }
+
       return data;
     } catch (error) {
-      if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
       throw error;
     }
   },
@@ -36,37 +54,42 @@ export const api = {
   async getExercisesList() {
     try {
       const response = await fetch(`${API_URL}/exercises`);
+      // Verifica se o retorno é JSON válido
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Resposta inválida do servidor (não é JSON)");
+      }
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
       return data;
     } catch (error) {
-      console.error("Erro ao buscar lista:", error);
+      console.error("Erro ao buscar lista de exercícios:", error);
       throw error;
     }
   },
 
-  // --- NOVO MÉTODO ---
   async getUserProgress(exerciseId, userId) {
       try {
           const response = await fetch(`${API_URL}/exercises/${exerciseId}/progress?user_id=${userId}`);
           const data = await response.json();
           if (!response.ok) throw new Error(data.message);
-          return data; // { success: true, progress: { user_answer: "...", is_completed: 1 } }
+          return data; 
       } catch (error) {
           console.error("Erro ao buscar progresso:", error);
           return null;
       }
   },
-  // ------------------
 
-  async submitExercise(exerciseId, userId, userAnswer) {
+  async submitExercise(exerciseId, userId, userAnswer, isCompleted) {
     try {
       const response = await fetch(`${API_URL}/exercises/${exerciseId}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             user_id: userId, 
-            user_answer: JSON.stringify(userAnswer) // Garante envio como string
+            user_answer: JSON.stringify(userAnswer),
+            is_completed: isCompleted // Envia o status calculado pelo front
         }),
       });
       const data = await response.json();

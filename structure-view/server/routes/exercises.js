@@ -16,11 +16,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// --- NOVA ROTA: Buscar progresso do usuário ---
+// GET /:id/progress
 router.get('/:id/progress', async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query; // Pega o ID do usuário da query string (?user_id=1)
+    const { user_id } = req.query; 
 
     if (!user_id) {
       return res.status(400).json({ success: false, message: 'user_id é obrigatório' });
@@ -32,35 +32,37 @@ router.get('/:id/progress', async (req, res) => {
     );
 
     if (rows.length === 0) {
-      // Se não tiver resposta salva, retorna null sem erro
       return res.json({ success: true, progress: null });
     }
 
-    res.json({ success: true, progress: rows[0] });
+    // Converte o bit do banco (0/1) para boolean para o front
+    const data = rows[0];
+    data.is_completed = Boolean(data.is_completed);
+
+    res.json({ success: true, progress: data });
   } catch (error) {
     console.error('Erro ao buscar progresso:', error);
     res.status(500).json({ success: false, message: 'Erro interno do servidor' });
   }
 });
-// ----------------------------------------------
 
 // POST / => criar novo exercício
 router.post('/', async (req, res) => {
   try {
-    const { title, answer, topic } = req.body;
+    const { title, answer, topic, difficulty } = req.body;
     if (!title || !answer) {
       return res.status(400).json({ success: false, message: 'title e answer são obrigatórios' });
     }
 
     const [result] = await pool.execute(
-      'INSERT INTO exercises (title, answer, topic) VALUES (?, ?, ?)',
-      [title, answer, topic || null]
+      'INSERT INTO exercises (title, answer, topic, difficulty) VALUES (?, ?, ?, ?)',
+      [title, answer, topic || null, difficulty || 'Médio']
     );
 
     res.status(201).json({
       success: true,
       message: 'Exercício criado',
-      exercise: { id: result.insertId, title, topic: topic || null }
+      exercise: { id: result.insertId, title, topic: topic || null, difficulty }
     });
   } catch (error) {
     console.error('Erro ao criar exercício:', error);
@@ -72,44 +74,34 @@ router.post('/', async (req, res) => {
 router.post('/:id/submit', async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id, user_answer } = req.body;
+    // Recebe o status calculado pelo Front-end
+    const { user_id, user_answer, is_completed } = req.body;
 
     if (!user_id || typeof user_answer === 'undefined') {
       return res.status(400).json({ success: false, message: 'user_id e user_answer são obrigatórios' });
     }
 
-    const [exRows] = await pool.execute('SELECT answer FROM exercises WHERE id = ?', [id]);
-    if (exRows.length === 0) return res.status(404).json({ success: false, message: 'Exercício não encontrado' });
-
-    const correct = (exRows[0].answer || '').toString().trim().toLowerCase();
-    // Para comparar JSON de inputs, idealmente faríamos um parse antes, 
-    // mas aqui vamos simplificar assumindo que o backend recebe a string JSON
-    // e compara com o gabarito que também deve ser JSON ou string.
-    // IMPORTANTE: Como estamos salvando um objeto JSON complexo, a validação exata no backend 
-    // pode ser difícil se a ordem das chaves mudar. 
-    // Para este MVP, vamos confiar no frontend para validação visual 
-    // e o backend apenas salva, ou aceita uma flag 'is_correct' do front se confiarmos nele.
-    // VOU MANTER A LÓGICA ATUAL, mas o 'is_completed' pode vir errado se a string não bater exatamente.
-    // SUGESTÃO: O front já valida visualmente. O banco serve para persistência.
+    // Converte para booleano real (caso venha string ou undefined)
+    const isCompletedBool = is_completed === true; 
     
-    // Para salvar sem validar rigorosamente no backend (já que a lógica visual é complexa):
-    const isCompleted = true; // Simplificação: assumimos que se enviou, salvamos o estado. 
-    // Se quiser validar, teria que replicar a lógica do gabarito aqui.
-    
-    const completedAt = new Date();
+    // Data de conclusão: Só define se for completado agora
+    const completedAt = isCompletedBool ? new Date() : null;
 
+    // Query UPSERT (Insert ou Update)
+    // A lógica do completed_at garante que se já estava completo, mantém a data original.
     await pool.execute(
       `INSERT INTO user_exercises (user_id, exercise_id, user_answer, is_completed, completed_at)
        VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          user_answer = VALUES(user_answer),
          is_completed = VALUES(is_completed),
-         completed_at = IF(VALUES(is_completed), VALUES(completed_at), completed_at),
+         -- Se o novo status é completo e o antigo era nulo, atualiza a data. Se não, mantém a antiga.
+         completed_at = IF(VALUES(is_completed) AND completed_at IS NULL, VALUES(completed_at), completed_at),
          updated_at = CURRENT_TIMESTAMP`,
-      [user_id, id, user_answer, isCompleted ? 1 : 0, completedAt]
+      [user_id, id, user_answer, isCompletedBool ? 1 : 0, completedAt]
     );
 
-    res.json({ success: true, message: 'Resposta salva', is_completed: !!isCompleted });
+    res.json({ success: true, message: 'Progresso salvo', is_completed: isCompletedBool });
   } catch (error) {
     console.error('Erro ao submeter resposta:', error);
     res.status(500).json({ success: false, message: 'Erro interno do servidor' });
@@ -121,7 +113,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const [result] = await pool.execute('DELETE FROM exercises WHERE id = ?', [id]);
-    const affectedRows =  result?.affectedRows ??  result?.[0]?.affectedRows ?? 0;
+    const affectedRows = result.affectedRows ?? result[0]?.affectedRows ?? 0;
     if (affectedRows === 0) return res.status(404).json({ success: false, message: 'Exercício não encontrado' });
     res.json({ success: true, message: 'Exercício deletado' });
   } catch (error) {

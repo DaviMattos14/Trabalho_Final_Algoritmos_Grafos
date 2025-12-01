@@ -8,7 +8,7 @@ const DFSStartFinish = () => {
   const { isDarkMode } = useOutletContext();
   const { user } = useAuth();
 
-  const EXERCISE_ID = 2;
+  const EXERCISE_ID = 2; 
 
   const correctedAnswers = {
       start0: 1, end0: 12,
@@ -22,16 +22,12 @@ const DFSStartFinish = () => {
   const [inputs, setInputs] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // --- CARREGAMENTO DOS DADOS ---
   useEffect(() => {
     const loadProgress = async () => {
         if (!user) return;
-        
         try {
             const data = await api.getUserProgress(EXERCISE_ID, user.id);
-            
             if (data && data.success && data.progress) {
-                // Se tiver resposta salva, converte de volta para objeto
                 const savedInputs = JSON.parse(data.progress.user_answer);
                 setInputs(savedInputs);
             }
@@ -39,14 +35,23 @@ const DFSStartFinish = () => {
             console.error("Erro ao carregar progresso:", e);
         }
     };
-    
     loadProgress();
   }, [user]);
-  // ------------------------------
 
   const handleChange = (e) => {
     const val = e.target.value === '' ? '' : parseInt(e.target.value);
     setInputs(prev => ({ ...prev, [e.target.name]: val }));
+  };
+
+  // --- FUNÇÃO PARA VERIFICAR SE ESTÁ TUDO COMPLETO ---
+  const checkCompletion = (currentInputs) => {
+      // Verifica se todas as chaves do gabarito estão presentes e corretas nos inputs
+      for (let key in correctedAnswers) {
+          if (currentInputs[key] !== correctedAnswers[key]) {
+              return false;
+          }
+      }
+      return true;
   };
 
   const handleAutoSave = async () => {
@@ -54,7 +59,10 @@ const DFSStartFinish = () => {
 
     setIsSaving(true);
     try {
-        await api.submitExercise(EXERCISE_ID, user.id, inputs);
+        // Calcula se está completo antes de enviar
+        const isCompleted = checkCompletion(inputs);
+        
+        await api.submitExercise(EXERCISE_ID, user.id, inputs, isCompleted);
     } catch (error) {
         console.error("Erro ao salvar progresso:", error);
     } finally {
@@ -65,7 +73,10 @@ const DFSStartFinish = () => {
   const revealAnswers = () => {
       if (window.confirm("Tem certeza? Tente resolver sozinho primeiro!")) {
           setInputs(correctedAnswers);
-          setTimeout(handleAutoSave, 100);
+          // Salva como completo pois é o gabarito
+          setTimeout(() => {
+               api.submitExercise(EXERCISE_ID, user.id, correctedAnswers, true);
+          }, 100);
       }
   };
 
@@ -176,7 +187,7 @@ const DFSStartFinish = () => {
                                         type="number" name={`start${id}`} 
                                         value={inputs[`start${id}`] !== undefined ? inputs[`start${id}`] : ''}
                                         onChange={handleChange}
-                                        onBlur={handleAutoSave}
+                                        onBlur={handleAutoSave} 
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text }} 
                                     />
                                 </div>
@@ -186,7 +197,7 @@ const DFSStartFinish = () => {
                                         type="number" name={`end${id}`} 
                                         value={inputs[`end${id}`] !== undefined ? inputs[`end${id}`] : ''}
                                         onChange={handleChange}
-                                        onBlur={handleAutoSave}
+                                        onBlur={handleAutoSave} 
                                         style={{ width: '100%', padding: '8px', borderRadius: '4px', border: `1px solid ${theme.border}`, background: theme.cardBg, color: theme.text }} 
                                     />
                                 </div>

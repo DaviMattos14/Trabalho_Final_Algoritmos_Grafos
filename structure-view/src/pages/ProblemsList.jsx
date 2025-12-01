@@ -9,20 +9,17 @@ const ProblemsList = () => {
   const { isDarkMode } = useOutletContext();
   const { user } = useAuth(); 
 
-  // Estados de Dados
   const [exercises, setExercises] = useState([]);
-  const [progressMap, setProgressMap] = useState({}); // Mapa: { id: 'completed' | 'not_started' }
+  const [progressMap, setProgressMap] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // 1. Carregar Lista de Exercícios do Banco de Dados
+  // 1. Carregar Exercícios
   useEffect(() => {
     const fetchExercises = async () => {
       try {
         const data = await api.getExercisesList();
-        if (data.success) {
-          setExercises(data.exercises);
-        }
+        if (data.success) setExercises(data.exercises);
       } catch (error) {
         console.error("Erro ao carregar exercícios:", error);
       } finally {
@@ -32,26 +29,25 @@ const ProblemsList = () => {
     fetchExercises();
   }, []);
 
-  // 2. Carregar Progresso do Usuário (Apenas se estiver logado e houver exercícios)
+  // 2. Carregar Progresso
   useEffect(() => {
     const fetchProgress = async () => {
       if (!user || exercises.length === 0) return;
 
       const newProgressMap = {};
       
-      // Busca o status de cada exercício
-      // (Nota: Em produção, uma rota que retorna todos os status de uma vez seria mais eficiente)
       await Promise.all(exercises.map(async (ex) => {
         try {
             const p = await api.getUserProgress(ex.id, user.id);
             if (p && p.success && p.progress) {
-                // Se existe registro, verifica se está completo
-                newProgressMap[ex.id] = p.progress.is_completed ? 'completed' : 'in_progress';
+                // CORREÇÃO: Verificação explícita de completude
+                // O banco pode retornar 1 (number) ou true (boolean)
+                const isDone = p.progress.is_completed === 1 || p.progress.is_completed === true;
+                newProgressMap[ex.id] = isDone ? 'completed' : 'in_progress';
             } else {
                 newProgressMap[ex.id] = 'not_started';
             }
         } catch (e) {
-            console.error(`Erro ao buscar progresso do exercício ${ex.id}`, e);
             newProgressMap[ex.id] = 'not_started';
         }
       }));
@@ -62,9 +58,7 @@ const ProblemsList = () => {
     fetchProgress();
   }, [user, exercises]);
 
-  // --- HELPERS DE LÓGICA ---
-
-  // Agrupa exercícios por Tópico (ex: 'Grafos', 'Estruturas') vindo do banco
+  // --- Helpers ---
   const groupedExercises = exercises.reduce((acc, item) => {
     const topic = item.topic || 'Geral';
     if (!acc[topic]) acc[topic] = [];
@@ -74,24 +68,19 @@ const ProblemsList = () => {
 
   const availableCategories = Object.keys(groupedExercises);
 
-  // Infere o algoritmo com base no título para o visualizador genérico
   const getAlgoParam = (title) => {
       const t = title.toLowerCase();
       if (t.includes('dfs') || t.includes('profundidade')) return 'dfs';
       if (t.includes('bfs') || t.includes('largura')) return 'bfs';
       if (t.includes('dijkstra')) return 'dijkstra';
       if (t.includes('topológica') || t.includes('topological')) return 'topo';
-      return 'dfs'; // Fallback
+      return 'dfs';
   };
 
-  // Direciona para a página correta
   const handleNavigation = (item) => {
-      // Redirecionamento específico para o exercício de Tempos DFS (ID 2 no seed do banco)
-      // Verificamos também pelo título para ser mais robusto caso o ID mude
       if (item.id === 2 || item.title.includes('Tempos') || item.title.includes('Start and Finish')) {
           navigate('/problem/dfs-start-finish-time');
       } else {
-          // Redirecionamento genérico para o Visualizador
           navigate(`/visualizer?algo=${getAlgoParam(item.title)}`);
       }
   };
@@ -105,7 +94,6 @@ const ProblemsList = () => {
     }
   };
 
-  // Tema Visual
   const theme = {
     bg: isDarkMode ? '#1e293b' : '#f8f9fa',
     text: isDarkMode ? '#f1f5f9' : '#1e293b',
@@ -115,11 +103,7 @@ const ProblemsList = () => {
     inputBg: isDarkMode ? '#0f172a' : '#ffffff'
   };
 
-  if (isLoading) {
-      return <div style={{display:'flex', justifyContent:'center', padding:'50px', color: theme.textSec, alignItems: 'center', gap: '10px'}}>
-          <Loader2 className="animate-spin" /> Carregando exercícios...
-      </div>;
-  }
+  if (isLoading) return <div style={{display:'flex', justifyContent:'center', padding:'50px', color: theme.textSec}}><Loader2 className="animate-spin" /> Carregando...</div>;
 
   return (
     <main style={{ flex: 1, padding: '3rem', overflowY: 'auto', backgroundColor: theme.bg }}>
@@ -129,7 +113,6 @@ const ProblemsList = () => {
             Exercícios Práticos
         </h2>
 
-        {/* Filtro de Categorias */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Filter size={20} color={theme.textSec} />
             <select 
@@ -148,7 +131,6 @@ const ProblemsList = () => {
         </div>
       </div>
 
-      {/* Aviso de Login */}
       {!user && (
         <div style={{ 
           marginBottom: '2rem', padding: '15px', borderRadius: '8px', 
@@ -163,7 +145,6 @@ const ProblemsList = () => {
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         {Object.keys(groupedExercises).map((category, idx) => {
-            // Aplica filtro visual
             if (selectedCategory !== 'all' && category !== selectedCategory) return null;
 
             return (
@@ -184,25 +165,13 @@ const ProblemsList = () => {
                                 padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '15px', transition: 'transform 0.2s', position: 'relative'
                             }}
                         >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                              <div>
-                                  <h4 style={{ margin: 0, color: theme.text, fontSize: '1.1rem', fontWeight: '600' }}>{item.title}</h4>
-                                  
-                                  {/* MUDANÇA: Usa item.difficulty vindo do banco */}
-                                  <span style={{ 
-                                      fontSize: '0.85rem', 
-                                      color: theme.textSec, 
-                                      marginTop: '5px', 
-                                      display: 'inline-block',
-                                      // Opcional: Cor baseada na dificuldade
-                                      fontWeight: '500'
-                                  }}>
-                                      Dificuldade: {item.difficulty || 'Não definida'}
-                                  </span>
-                              </div>
-                              <Box size={24} color={theme.textSec} style={{opacity: 0.5}} />
-                          </div>
-
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                <div>
+                                    <h4 style={{ margin: 0, color: theme.text, fontSize: '1.1rem', fontWeight: '600' }}>{item.title}</h4>
+                                    <span style={{ fontSize: '0.85rem', color: theme.textSec, marginTop: '5px', display: 'inline-block' }}>Dificuldade: {item.difficulty || 'Média'}</span>
+                                </div>
+                                <Box size={24} color={theme.textSec} style={{opacity: 0.5}} />
+                            </div>
 
                             <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: `1px solid ${theme.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <button 
