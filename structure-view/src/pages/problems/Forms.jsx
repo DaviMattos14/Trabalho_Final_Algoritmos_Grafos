@@ -13,7 +13,7 @@ export default function Forms() {
   const [inputs, setInputs] = useState("{}");
   const [isSaving, setIsSaving] = useState(false);
 
-  let { answer: original_answer, title, id: EXERCISE_ID } = location.state || {};
+  let { answer: original_answer, title, id: EXERCISE_ID, topic } = location.state || {};
   const answer = JSON.parse(original_answer ?? "{}"); 
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function Forms() {
     inputBg: isDarkMode ? '#0f172a' : '#ffffff'
   };
 
-  //console.log(original_answer)
+  console.log(topic)
 
   return (
     <main style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: theme.bg, overflowY: 'auto' }}>
@@ -102,7 +102,7 @@ export default function Forms() {
             </div>
             <div style={{ margin: "0 auto" }}>
               {
-                answer.graph ? <GraphViewer graph={answer.graph} showArrows={true} showWeights={["DFS", "BFS"].includes(answer.topic)}/> : null
+                answer.graph ? <GraphViewer graph={answer.graph} showArrows={true} showWeights={["Dijkstra"].includes(topic)}/> : null
               }
             </div>
             <OptionsList answer={answer} state={[inputs, handleChange]} />
