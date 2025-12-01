@@ -6,6 +6,9 @@ const router = express.Router();
 // GET / => listar todos os exercícios
 router.get('/', async (req, res) => {
   try {
+    // Definindo o cabeçalho aqui, diretamente na rota
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
     const [rows] = await pool.execute(
       'SELECT id, title, answer, topic, difficulty, created_at, updated_at FROM exercises ORDER BY id'
     );

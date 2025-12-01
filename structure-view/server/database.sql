@@ -1,5 +1,8 @@
 -- Schema do banco de dados para o sistema de login
-CREATE DATABASE IF NOT EXISTS structure_view;
+CREATE DATABASE IF NOT EXISTS structure_view
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
 USE structure_view;
 
 -- Tabela de usuários
@@ -10,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabela de exercícios
 CREATE TABLE IF NOT EXISTS exercises (
@@ -20,7 +23,7 @@ CREATE TABLE IF NOT EXISTS exercises (
     topic VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabela de progresso do usuário nos exercícios (sem attempts)
 CREATE TABLE IF NOT EXISTS user_exercises (
@@ -35,7 +38,7 @@ CREATE TABLE IF NOT EXISTS user_exercises (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_exercise (user_id, exercise_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Inserir um usuário de exemplo (senha: "senha123" - hash simples para demonstração)
 -- Em produção, use bcrypt ou similar
@@ -45,15 +48,16 @@ ON DUPLICATE KEY UPDATE email=email;
 -- Inserir um exercício de exemplo
 
 ALTER TABLE exercises ADD COLUMN difficulty VARCHAR(50) DEFAULT 'Médio';
+ALTER TABLE exercises CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 2. Atualizar ou Inserir o Exercício com a Dificuldade
 INSERT INTO exercises (id, title, topic, answer, difficulty) 
 VALUES (
     2, 
     'Tempos de Busca em Profundidade (DFS)', 
-    'DFS', 
-    '{"start0":0,"end0":12,"start2":1,"end2":10,"start3":2,"end3":3,"start4":4,"end4":9,"start1":7,"end1":8,"start5":6,"end5":7}',
-    'Facil'
+    'Grafos', 
+    '{"start0":0,"end0":11,"start1":5,"end1":8,"start2":1,"end2":10,"start3":2,"end3":3,"start4":4,"end4":9,"start5":6,"end5":7}',
+    'Fácil'
 )
 ON DUPLICATE KEY UPDATE 
     title = VALUES(title),
@@ -63,7 +67,6 @@ ON DUPLICATE KEY UPDATE
 
 
 -- EXERCÍCIOS DE ORDENAÇÃO TOPOLÓGICAS
-
 INSERT INTO exercises (title, answer, topic)
 VALUES (
   'Múltipla escolha - Com base no gráfico abaixo. Qual é uma ordenação topológica válida?',
