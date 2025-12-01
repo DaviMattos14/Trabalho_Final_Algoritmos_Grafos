@@ -1,6 +1,7 @@
-// --- MUDANÇA AQUI: Usamos caminho relativo ---
-// O Vite vai redirecionar '/api' para 'http://localhost:3001/api'
-const API_URL = '/api'; 
+// --- MUDANÇA AQUI: usa variável de ambiente em produção ---
+// Localmente o Vite proxy '/api' para 'http://localhost:3001'. Em produção
+// configure a variável VITE_API_URL no Vercel para apontar ao backend (ex: https://api.example.com)
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = {
   async login(email, password) {
