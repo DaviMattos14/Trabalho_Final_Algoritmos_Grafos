@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import exercisesRoutes from './routes/exercises.js'; 
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rotas
 app.use('/api/auth', authRoutes);
+app.use('/api/exercises', exercisesRoutes); 
 
 // Rota de teste
 app.get('/api/health', (req, res) => {
