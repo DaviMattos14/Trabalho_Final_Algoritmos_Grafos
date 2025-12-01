@@ -78,6 +78,21 @@ VALUES (
   'Ordenação Topológica'
 );
 
+-- EXERCÍCIOS DE ALGORITMO DE DIJKSTRA
+
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Qual é a menor distância total de A até E usando Dijkstra?',
+  '{"graph":{"A":[["B",2],["C",5]],"B":[["D",1]],"C":[["D",2]],"D":[["E",3]],"E":[]},"options":[5,6,7,8],"expected":6,"correct":6}',
+  'Dijkstra'
+);
+
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Usando o algoritmo de Dijkstra, qual é a menor distância total para ir do nó A ao nó F?',
+  '{"graph":{"A":[["B",4],["C",2]],"B":[["C",5],["D",10]],"C":[["E",3]],"D":[["F",11]],"E":[["D",4]],"F":[]},"options":[16,17,18,20,21],"expected":20,"correct":20}',
+  'Dijkstra'
+);
 
 
 
