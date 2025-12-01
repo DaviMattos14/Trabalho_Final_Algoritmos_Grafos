@@ -60,3 +60,27 @@ ON DUPLICATE KEY UPDATE
     topic = VALUES(topic),
     answer = VALUES(answer),
     difficulty = VALUES(difficulty);
+
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Usando o algoritmo de Dijkstra, qual é a menor distância total para ir do nó A ao nó F?',
+  '{"graph":{"A":[["B",4],["C",2]],"B":[["C",5],["D",10]],"C":[["E",3]],"D":[["F",11]],"E":[["D",4]],"F":[]},"options":[16,17,18,20,21],"expected":18,"correct":18}',
+  'Dijkstra'
+);
+
+
+-- EXERCÍCIOS DE ORDENAÇÃO TOPOLÓGICAS
+
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Com base no gráfico abaixo. Qual é uma ordenação topológica válida?',
+  '{"graph":{"A":[["B",1],["C",1]],"B":[["D",1]],"C":[["D",1]],"D":[]},"options":["A, B, C, D","A, C, B, D","B, A, C, D","A, D, B, C"],"expected":"A, B, C, D","correct":"A, B, C, D"}',
+  'Ordenação Topológica'
+);
+
+INSERT INTO exercises (title, answer, topic)
+VALUES (
+  'Múltipla escolha - Qual é uma ordenação topológica válida para o seguinte grafo?',
+  '{"graph":{"H":[["E",1],["F",1]],"E":[["C",1],["D",1]],"F":[["D",1]],"C":[["A",1]],"D":[["B",1]],"A":[],"B":[]},"options":["H, E, F, C, D, A, B","H, F, E, D, C, B, A","E, H, F, C, D, A, B","H, C, E, F, D, A, B"],"expected":"H, E, F, C, D, A, B","correct":"H, E, F, C, D, A, B"}',
+  'Ordenação Topológica'
+);
