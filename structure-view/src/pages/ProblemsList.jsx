@@ -1,154 +1,170 @@
-import { useOutletContext } from 'react-router-dom';
-import Combobox from '../components/Combobox';
-import { useMemo, useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { Play, CheckCircle, Clock, Circle, Box, ShieldAlert, Filter } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const availableCategories = [
-  "Todos",
-  "Ordenação Topológica",
-  "Busca em Profundidade",
-  "Busca em Largura",
-  "Algoritmo de Dijkstra"
-];
-
-export default function ProblemsList() {
-  const [category, setCategory] = useState("Todos");
+const ProblemsList = () => {
+  const navigate = useNavigate();
   const { isDarkMode } = useOutletContext();
+  const { user } = useAuth(); 
 
-  const problems = useMemo(() => {
-    if (!availableCategories.includes(category)) return [];
+  // --- NOVO: Estado para o filtro ---
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-    if (category === "Todos") {
-      return Object.values(MOCK).flat();
+  // Mock de Dados dos Exercícios
+  const categories = [
+    {
+      title: "Grafos",
+      items: [
+        { id: 'dfs-start-finish-time', title: 'Tempos de Busca em Profundidade (DFS)', difficulty: 'Fácil', algo: 'dfs' },
+        { id: 'ordenacao-topologica-1', title: 'Ordenação Topologica 1', difficulty: 'Facil', algo: 'dfs' }
+      ]
     }
+  ];
 
-    return MOCK[category] || [];
-  }, [category]);
+  // --- LÓGICA DE FILTRAGEM ---
+  const filteredCategories = selectedCategory === 'all' 
+    ? categories 
+    : categories.filter(cat => cat.title === selectedCategory);
 
-  const theme = {
-    bg: isDarkMode ? '#1e293b' : '#ffffff', // Fundo do container (igual ao Home)
-    text: isDarkMode ? '#ffffffff' : '#111827',
-    textSec: isDarkMode ? '#d9dde4ff' : '#64748b',
-    cardBg: isDarkMode ? '#0f172a' : '#f8fafc',
-    cardBorder: isDarkMode ? '#334155' : '#e2e8f0',
-    cardHover: isDarkMode ? '#1e293b' : '#ffffff',
-    sectionTitle: isDarkMode ? '#e2e8f0' : '#334155'
+  // Mock de Status do Usuário
+  const userProgress = {
+    'bfs-basic': 'completed',
+    'dfs-basic': 'in_progress',
+    'dijkstra-path': 'not_started',
+    'detect-cycle': 'not_started',
+    'topo-sort': 'completed'
   };
 
+  const getStatusConfig = (id) => {
+    const status = userProgress[id] || 'not_started';
+    switch (status) {
+      case 'completed': return { label: 'Concluído', color: '#10b981', icon: <CheckCircle size={16} /> };
+      case 'in_progress': return { label: 'Em Andamento', color: '#f59e0b', icon: <Clock size={16} /> };
+      default: return { label: 'Não Iniciado', color: '#64748b', icon: <Circle size={16} /> };
+    }
+  };
+
+  const theme = {
+    bg: isDarkMode ? '#1e293b' : '#f8f9fa',
+    text: isDarkMode ? '#f1f5f9' : '#1e293b',
+    textSec: isDarkMode ? '#94a3b8' : '#64748b',
+    cardBg: isDarkMode ? '#0f172a' : 'white',
+    cardBorder: isDarkMode ? '#334155' : '#e2e8f0',
+    inputBg: isDarkMode ? '#0f172a' : '#ffffff'
+  };
 
   return (
-    <main style={{ 
-      flex: 1, 
-      padding: '3rem', 
-      overflowY: 'auto', 
-      backgroundColor: theme.bg,
-      transition: 'background-color 0.3s'
-    }}>
-      <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: theme.text, marginBottom: '2rem' }}>
-        Listas de exercícios
-      </h2>
+    <main style={{ flex: 1, padding: '3rem', overflowY: 'auto', backgroundColor: theme.bg }}>
       
-      <div style={{ borderBottom: `2px solid ${theme.cardBorder}` }}>
-        <Combobox  
-          label='Escolha um conteúdo' 
-          options={availableCategories} 
-          defaultValue={availableCategories[0]} 
-          onChange={setCategory}
-        />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <h2 style={{ color: theme.text, fontSize: '1.75rem', fontWeight: '700', margin: 0 }}>
+            Exercícios Práticos
+        </h2>
+
+        {/* --- NOVO: Dropdown de Filtro --- */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Filter size={20} color={theme.textSec} />
+            <select 
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{
+                    padding: '10px 15px',
+                    borderRadius: '8px',
+                    border: `1px solid ${theme.cardBorder}`,
+                    backgroundColor: theme.inputBg,
+                    color: theme.text,
+                    outline: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                    minWidth: '200px'
+                }}
+            >
+                <option value="all">Todas as Categorias</option>
+                {categories.map((cat, idx) => (
+                    <option key={idx} value={cat.title}>{cat.title}</option>
+                ))}
+            </select>
+        </div>
       </div>
 
-      <ul style={{ 
-        width: "100%", 
-        padding: 0, 
-        listStyle: "none",
-        border: "2px solid " + theme.cardBorder,
-        borderRadius: "5px" 
-      }}>
-        { problems.map((e, i) => (
-          <li style={{ 
-            width: "100%", 
-            display: "grid", 
-            gridTemplateColumns: "50px 1fr 150px auto",
-            alignItems: "center",
-            background: `${i % 2 === 0 ? theme.cardBg : "transparent"}`,
-            padding: "1em 0px",
-            gap: "1em",
-            borderRadius: "2px" 
-          }}>
-            <p style={{ 
-              width: "50px", 
-              display: "flex", 
-              justifyContent: "center", 
-              alignItems: "center",
-              color: theme.text
-            }}>
-              { e.id }
-            </p>
-            <h3 style={{ 
-              padding: "0px", 
-              margin: "0px",
-              fontWeight: "400",
-              fontSize: "1em",
-              color: theme.text
-            }}>
-              { e.name }
-            </h3>
-            <div style={{  
-              display: "flex", 
-              justifyContent: "center", 
-              alignItems: "center",
-              color: "#fff"
-            }}>
-              <p style={{ 
-                backgroundColor: e.status === "NOT DONE" ? "red" : "green",
-                padding: "2px 6px",
-                borderRadius: "2px", 
-              }}>
-                { e.status === "NOT DONE" ? "Não concluído" : "Concluído" }
-              </p>
-            </div>
-            <a style={{ 
-              display: "flex", 
-              justifyContent: "center", 
-              alignItems: "center",
-              paddingRight: "12px",
-              textDecoration: "none",
-              color: "#2563EB",
-              fontWeight: "bold"
-            }} 
-              href='#'>
-                PRATICAR
-            </a>
-          </li>
-        )) }
-        
-      </ul>
+      {/* Aviso se não estiver logado */}
+      {!user && (
+        <div style={{ 
+          marginBottom: '2rem', padding: '15px', borderRadius: '8px', 
+          backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff', 
+          border: '1px solid #3b82f6', color: '#3b82f6',
+          display: 'flex', alignItems: 'center', gap: '10px'
+        }}>
+          <ShieldAlert size={20} />
+          <span>Faça login para salvar seu progresso nos exercícios.</span>
+        </div>
+      )}
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+        {filteredCategories.length > 0 ? (
+            filteredCategories.map((cat, idx) => (
+            <section key={idx}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0 0 1.5rem 0', color: theme.textSec, borderBottom: `1px solid ${theme.cardBorder}`, paddingBottom: '10px' }}>
+                    {cat.title}
+                </h3>
 
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                {cat.items.map((item) => {
+                    const status = getStatusConfig(item.id);
+                    
+                    return (
+                    <div 
+                        key={item.id}
+                        style={{
+                        background: theme.cardBg,
+                        borderRadius: '8px',
+                        border: `1px solid ${theme.cardBorder}`,
+                        padding: '1.5rem',
+                        display: 'flex', flexDirection: 'column', gap: '15px',
+                        transition: 'transform 0.2s',
+                        position: 'relative'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                            <div>
+                                <h4 style={{ margin: 0, color: theme.text, fontSize: '1.1rem', fontWeight: '600' }}>{item.title}</h4>
+                                <span style={{ fontSize: '0.85rem', color: theme.textSec, marginTop: '5px', display: 'inline-block' }}>Dificuldade: {item.difficulty}</span>
+                            </div>
+                            <Box size={24} color={theme.textSec} style={{opacity: 0.5}} />
+                        </div>
+
+                        <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: `1px solid ${theme.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <button 
+                                onClick={() => navigate(`/problem/${item.id}`)}
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                    background: '#3b82f6', color: 'white', border: 'none',
+                                    padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500'
+                                }}
+                            >
+                                <Play size={16} fill="white" /> Praticar
+                            </button>
+
+                            {user && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', color: status.color, fontWeight: '500' }}>
+                                    {status.icon}
+                                    {status.label}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    );
+                })}
+                </div>
+            </section>
+            ))
+        ) : (
+            <p style={{ color: theme.textSec, textAlign: 'center', marginTop: '2rem' }}>Nenhum exercício encontrado nesta categoria.</p>
+        )}
+      </div>
     </main>
   );
 };
 
-const MOCK = {
-  "Ordenação Topológica": [
-    { id: "1", name: "Calcular ordem de execução de tarefas dependentes", status: "NOT DONE" },
-    { id: "2", name: "Encontrar ordem válida em um grafo de pré-requisitos", status: "DONE" },
-    { id: "3", name: "Detectar ciclo antes de ordenar o grafo", status: "NOT DONE" }
-  ],
-
-  "Busca em Profundidade": [
-    { id: "4", name: "Contar componentes conectados em um grafo", status: "NOT DONE" },
-    { id: "5", name: "Encontrar caminho entre dois vértices usando DFS", status: "DONE" },
-    { id: "6", name: "Verificar se um grafo é bipartido via DFS", status: "NOT DONE" }
-  ],
-
-  "Busca em Largura": [
-    { id: "7", name: "Encontrar menor número de arestas entre dois nós", status: "DONE" },
-    { id: "8", name: "Nivelar um grafo e calcular camadas por BFS", status: "NOT DONE" },
-    { id: "9", name: "Detectar ciclos em gráficos não direcionados", status: "NOT DONE" }
-  ],
-
-  "Algoritmo de Dijkstra": [
-    { id: "10", name: "Encontrar menor caminho entre dois pontos", status: "NOT DONE" },
-    { id: "11", name: "Calcular distâncias mínimas em grafo com pesos positivos", status: "DONE" },
-    { id: "12", name: "Reconstruir caminho mínimo após cálculo de Dijkstra", status: "NOT DONE" }
-  ]
-}
+export default ProblemsList;

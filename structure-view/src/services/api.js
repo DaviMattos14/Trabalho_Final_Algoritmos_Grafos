@@ -50,5 +50,45 @@ export const api = {
       throw error;
     }
   },
-};
 
+  // --- NOVOS MÉTODOS PARA EXERCÍCIOS ---
+
+  async getExercisesList() {
+    try {
+      const response = await fetch(`${API_URL}/exercises`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      return data; // Retorna { success: true, exercises: [...] }
+    } catch (error) {
+      console.error("Erro ao buscar lista de exercícios:", error);
+      throw error;
+    }
+  },
+
+  async submitExercise(exerciseId, userId, userAnswer) {
+    try {
+      const response = await fetch(`${API_URL}/exercises/${exerciseId}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Enviamos a resposta como string JSON para ser genérico
+        body: JSON.stringify({ 
+            user_id: userId, 
+            user_answer: JSON.stringify(userAnswer) 
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao enviar resposta');
+      }
+
+      return data; // Retorna { success: true, is_completed: boolean }
+    } catch (error) {
+      console.error("Erro ao submeter exercício:", error);
+      throw error;
+    }
+  }
+};

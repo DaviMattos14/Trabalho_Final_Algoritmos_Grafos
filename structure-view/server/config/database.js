@@ -10,7 +10,7 @@ const dbConfig = {
   connectionLimit: 10,
   queueLimit: 0,
   ssl: process.env.DEVELOPMENT ? false : {
-    rejectUnauthorized: true
+    rejectUnauthorized: false
   }
 };
 
