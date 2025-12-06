@@ -27,6 +27,7 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
       '/classes/dfs': 'Busca em Profundidade (DFS)',
       '/classes/topological': 'Ordenação Topológica',
       '/classes/dijkstra': 'Algoritmo de Dijkstra',
+      '/classes/scc': 'Componentes Fortemente Conexos',
       // Exercícios
       '/problem/dfs-start-finish-time': 'Exercício: Tempos de Busca em Profundidade (DFS)',
       '/problem/form': 'Exercício: Múltipla escolha'  
