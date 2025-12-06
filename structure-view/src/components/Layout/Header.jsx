@@ -23,8 +23,10 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
   const routeTitles = {
       '/classes/graph-rep': 'Representação de Grafos',
       '/classes/linked-list': 'Listas Encadeadas',
-      '/classes/bfs': 'Busca em Largura (Teoria)',
-      '/classes/dfs': 'Busca em Profundidade (Teoria)',
+      '/classes/bfs': 'Busca em Largura (BFS)',
+      '/classes/dfs': 'Busca em Profundidade (DFS)',
+      '/classes/topological-sort': 'Ordenação Topológica',
+      '/classes/dijkstra': 'Algoritmo de Dijkstra',
       // Exercícios
       '/problem/dfs-start-finish-time': 'Exercício: Tempos de Busca em Profundidade (DFS)',
       '/problem/form': 'Exercício: Múltipla escolha'  
