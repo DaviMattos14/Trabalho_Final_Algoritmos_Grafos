@@ -20,6 +20,7 @@ import DijkstraClass from './pages/classes/Dijkstra';
 import ProblemsList from './pages/ProblemsList';
 import DFSStartFinish from './pages/problems/DFSStartFinish';
 import Forms from './pages/problems/Forms';
+import StronglyConnectedComponentsClass from './pages/classes/StronglyConnectedComponents';
 
 const ProtectedRoute = ({ children }) => {
     // ... (sua lógica de proteção) ...
@@ -50,6 +51,7 @@ function App() {
               <Route path="/classes/bfs" element={<BreadthFirstSearchClass />} />
               <Route path="/classes/topological" element={<TopologicalSortClass />} />
               <Route path="/classes/dijkstra" element={<DijkstraClass />} />
+              <Route path="/classes/scc" element={<StronglyConnectedComponentsClass />} />
 
               {/* Rotas dos exercicios */}
               <Route path="/problem" element={<ProblemsList />} />

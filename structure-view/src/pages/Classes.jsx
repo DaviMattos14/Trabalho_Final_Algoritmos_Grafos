@@ -22,6 +22,7 @@ const Classes = () => {
         { id: 'graph-intro', title: "Representação de Grafos", desc: "Matriz vs Lista de Adjacência." },
         { id: 'dfs-intro', title: "Busca em Profundidade (DFS)", desc: "Exploração de grafos com pilha." },
         { id: 'bfs-intro', title: "Busca em Largura (BFS)", desc: "Exploração de grafos com fila." },
+        { id: 'scc-intro', title: "Componentes Fortemente Conexos", desc: "Ciclos e conectividade (CFCs)." },
         { id: 'topo-intro', title: "Ordenação Topológica", desc: "Ordenação linear para grafos direcionados acíclicos." },
         { id: 'dijkstra-intro', title: "Algoritmo de Dijkstra", desc: "Caminho mais curto em grafos ponderados." }
       ]
@@ -76,6 +77,7 @@ const Classes = () => {
                     else if (item.id === 'linked-list') navigate('/classes/linked-list');
                     else if (item.id === 'dfs-intro') navigate('/classes/dfs');
                     else if (item.id === 'bfs-intro') navigate('/classes/bfs');
+                    else if (item.id === 'scc-intro') navigate('/classes/scc');
                     else if (item.id === 'topo-intro') navigate('/classes/topological');
                     else if (item.id === 'dijkstra-intro') navigate('/classes/dijkstra');
                     else console.log("Aula em breve");
