@@ -48,8 +48,12 @@ const DepthFirstSearchClass = () => {
         { curr: 'B', visited: ['A', 'B'], desc: "Vai para vizinho B." },
         { curr: 'D', visited: ['A', 'B', 'D'], desc: "Vai para vizinho D." },
         { curr: 'F', visited: ['A', 'B', 'D', 'F'], desc: "Vai para vizinho F." },
-        { curr: 'E', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Volta e visita E (vizinho de B)." },
-        { curr: 'C', visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Volta e visita C (vizinho de A)." },
+        { curr: 'D', visited: ['A', 'B', 'D', 'F'], desc: "Backtrack: Retorna a D (F não tem novos vizinhos)." },
+        { curr: 'B', visited: ['A', 'B', 'D', 'F'], desc: "Backtrack: Retorna a B (D não tem mais vizinhos)." },
+        { curr: 'E', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Vai para vizinho E (próximo de B)." },
+        { curr: 'B', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Backtrack: Retorna a B (E não tem novos vizinhos)." },
+        { curr: 'A', visited: ['A', 'B', 'D', 'F', 'E'], desc: "Backtrack: Retorna a A (B não tem mais vizinhos)." },
+        { curr: 'C', visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Vai para vizinho C (próximo de A)." },
         { curr: null, visited: ['A', 'B', 'D', 'F', 'E', 'C'], desc: "Concluído." }
     ];
 
@@ -68,7 +72,17 @@ const DepthFirstSearchClass = () => {
             }, 1500);
         }
         return () => clearInterval(interval);
-    }, [isAutoPlaying]);
+    }, [isAutoPlaying, demoSteps.length]);
+
+    // Reinicia do passo 0 quando clica em reproduzir após terminar
+    const handlePlayPause = () => {
+        if (!isAutoPlaying && autoStep >= demoSteps.length - 1) {
+            setAutoStep(0);
+            setIsAutoPlaying(true);
+        } else {
+            setIsAutoPlaying(!isAutoPlaying);
+        }
+    };
 
     // Dados da simulação interativa (Mantido)
     const dfsSteps = [
@@ -93,22 +107,36 @@ const DepthFirstSearchClass = () => {
             highlight: 'B'
         },
         {
-            title: 'Explorando D → F',
-            description: 'Visitamos D, empilhamos F. Ao visitar F não há novos vizinhos e voltamos na recursão.',
+            title: 'Visita D',
+            description: 'Desempilhamos D, marcamos como visitado. D tem vizinho F que não foi visitado, então empilhamos F.',
             stack: ['C', 'E', 'F'],
             visited: ['A', 'B', 'D'],
             highlight: 'D'
         },
         {
-            title: 'Retorno e visita E',
-            description: 'Após esvaziar F retornamos a E, marcamos e detectamos que F já foi visitado.',
+            title: 'Visita F',
+            description: 'Desempilhamos F, marcamos como visitado. F tem vizinho E que já foi visitado, então F não tem novos vizinhos.',
+            stack: ['C', 'E'],
+            visited: ['A', 'B', 'D', 'F'],
+            highlight: 'F'
+        },
+        {
+            title: 'Backtrack: Retorna a D',
+            description: 'F não tem mais vizinhos, desempilhamos F e retornamos à pilha. D também não tem mais vizinhos não visitados.',
+            stack: ['C', 'E'],
+            visited: ['A', 'B', 'D', 'F'],
+            highlight: 'D'
+        },
+        {
+            title: 'Processa E',
+            description: 'Desempilhamos E, marcamos como visitado. E tem vizinho F mas já foi visitado, então E não tem novos vizinhos.',
             stack: ['C'],
             visited: ['A', 'B', 'D', 'F', 'E'],
             highlight: 'E'
         },
         {
-            title: 'Último vértice C',
-            description: 'C é visitado por último, restando zero elementos na pilha. O DFS termina.',
+            title: 'Visita C',
+            description: 'Desempilhamos C, marcamos como visitado. C tem vizinho E mas já foi visitado. Pilha vazia, DFS termina.',
             stack: [],
             visited: ['A', 'B', 'D', 'F', 'E', 'C'],
             highlight: 'C'
@@ -345,7 +373,7 @@ procedure DFSIterativa(origem):
                             <button onClick={() => setAutoStep(0)} style={{ padding: '8px', borderRadius: '6px', border: `1px solid ${theme.border}`, background: theme.bg, cursor: 'pointer', color: theme.textSec }}>
                                 <RotateCcw size={16} />
                             </button>
-                            <button onClick={() => setIsAutoPlaying(!isAutoPlaying)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: theme.accent, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
+                            <button onClick={handlePlayPause} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: theme.accent, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
                                 {isAutoPlaying ? <Pause size={16}/> : <Play size={16}/>}
                                 {isAutoPlaying ? 'Pausar' : 'Reproduzir'}
                             </button>

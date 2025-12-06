@@ -14,6 +14,9 @@ import Classes from './pages/Classes';
 import GraphRepresentation from './pages/classes/GraphRepresentation'; 
 import LinkedListClass from './pages/classes/LinkedList';
 import DepthFirstSearchClass from './pages/classes/DepthFirstSearch';
+import BreadthFirstSearchClass from './pages/classes/BreadthFirstSearch';
+import TopologicalSortClass from './pages/classes/TopologicalSort';
+import DijkstraClass from './pages/classes/Dijkstra';
 import ProblemsList from './pages/ProblemsList';
 import DFSStartFinish from './pages/problems/DFSStartFinish';
 import Forms from './pages/problems/Forms';
@@ -44,6 +47,9 @@ function App() {
               <Route path="/classes/graph-rep" element={<GraphRepresentation />} />
               <Route path="/classes/linked-list" element={<LinkedListClass />} />
               <Route path="/classes/dfs" element={<DepthFirstSearchClass />} />
+              <Route path="/classes/bfs" element={<BreadthFirstSearchClass />} />
+              <Route path="/classes/topological" element={<TopologicalSortClass />} />
+              <Route path="/classes/dijkstra" element={<DijkstraClass />} />
 
               {/* Rotas dos exercicios */}
               <Route path="/problem" element={<ProblemsList />} />
