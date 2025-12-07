@@ -25,16 +25,16 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
 
   // --- MUDANÇA 1: Registro das Rotas de Sub-páginas ---
   const routeTitles = {
-      '/classes/graph-rep': 'Representação de Grafos',
-      '/classes/linked-list': 'Listas Encadeadas',
-      '/classes/bfs': 'Busca em Largura (BFS)',
-      '/classes/dfs': 'Busca em Profundidade (DFS)',
-      '/classes/topological': 'Ordenação Topológica',
-      '/classes/dijkstra': 'Algoritmo de Dijkstra',
-      '/classes/scc': 'Componentes Fortemente Conexos',
-      // Exercícios
-      '/problem/dfs-start-finish-time': 'Exercício: Tempos de Busca em Profundidade (DFS)',
-      '/problem/form': 'Exercício: Múltipla escolha'  
+    '/classes/graph-rep': 'Representação de Grafos',
+    '/classes/linked-list': 'Listas Encadeadas',
+    '/classes/bfs': 'Busca em Largura (BFS)',
+    '/classes/dfs': 'Busca em Profundidade (DFS)',
+    '/classes/topological': 'Ordenação Topológica',
+    '/classes/dijkstra': 'Algoritmo de Dijkstra',
+    '/classes/scc': 'Componentes Fortemente Conexos',
+    // Exercícios
+    '/problem/dfs-start-finish-time': 'Exercício: Tempos de Busca em Profundidade (DFS)',
+    '/problem/form': 'Exercício: Múltipla escolha'
   };
 
   const displayTitle = (isVisualizer && algoParam)
@@ -173,7 +173,7 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <UserCircle size={20} />
-              {user.name || user.email.split('@')[0]}
+              Olá, {user.name || user.email.split('@')[0]}
             </button>
 
             {showUserMenu && (
