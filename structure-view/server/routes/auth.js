@@ -30,8 +30,6 @@ router.post('/login', async (req, res) => {
 
     const user = users[0];
 
-    // Comparação simples de senha (para trabalho de faculdade)
-    // Em produção, use bcrypt.compare()
     if (user.password !== password) {
       return res.status(401).json({
         success: false,
@@ -85,7 +83,6 @@ router.post('/register', async (req, res) => {
     }
 
     // Inserir novo usuário
-    // Em produção, use bcrypt.hash() para hash da senha
     const [result] = await pool.execute(
       'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
       [email, password, name || null]
@@ -194,6 +191,60 @@ router.put('/update', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+// Rota de exclusão de usuário
+router.delete('/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const { password } = req.body;
+
+    if (!user_id || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID do usuário e senha são obrigatórios'
+      });
+    }
+
+    // Verificar se o usuário existe e a senha está correta
+    const [users] = await pool.execute(
+      'SELECT id, email, password FROM users WHERE id = ?',
+      [user_id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    const user = users[0];
+
+    if (user.password !== password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Senha incorreta'
+      });
+    }
+
+    // Deletar o usuário (cascata deleta user_exercises também)
+    await pool.execute(
+      'DELETE FROM users WHERE id = ?',
+      [user_id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Usuário deletado com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao deletar usuário:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
