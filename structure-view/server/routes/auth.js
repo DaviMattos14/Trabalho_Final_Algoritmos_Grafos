@@ -1,5 +1,8 @@
 import express from 'express';
 import pool from '../config/database.js';
+import jwt from 'jsonwebtoken';
+import transporter from '../config/email.js'
+
 
 const router = express.Router();
 
@@ -199,6 +202,119 @@ router.put('/update', async (req, res) => {
       message: 'Erro interno do servidor'
     });
   }
+});
+
+// ROTA: Recuperação de Senha (Forgot Password)
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const JWT_SECRET = 'chave';
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'O email é obrigatório para a recuperação de senha.' 
+      });
+    }
+
+    const [users] = await pool.execute(
+      'SELECT id, email FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (users.length === 0) {
+      return res.json({ 
+        success: false, 
+        message: 'Se o email não encontrado.' 
+      });
+    }
+
+    const user = users[0];
+    const token = jwt.sign(
+      { userId: user.id, type: 'reset' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    
+    const resetURL = `https://structureview.vercel.app/reset-password/${token}`; // URL do seu frontend
+    const mailOptions = {
+      to: user.email,
+      from: 'structureview90@gmail.com',
+      subject: 'Redefinição de Senha',
+      html: `
+        <h2>Redefinição de Senha Solicitada</h2>
+        <p>Você solicitou a redefinição de senha para sua conta.</p>
+        <p>Clique neste link para prosseguir:</p>
+        <a href="${resetURL}">${resetURL}</a>
+        <p>Este link expira em 1 hora.</p>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    // 4. Sucesso
+    res.json({
+      success: true,
+      message: 'Link de redefinição de senha enviado para o seu email. Verifique sua caixa de entrada.'
+    });
+
+  } catch (error) {
+    console.error('Erro na recuperação de senha:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor ao solicitar a recuperação.' 
+    });
+  }
+});
+
+
+
+// Redefinição de Senha (/reset-password/:token)
+router.post('/reset-password/:token', async (req, res) => {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+    const JWT_SECRET = 'chave';
+
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: 'A nova senha deve ter pelo menos 6 caracteres.'
+        });
+    }
+    
+    let userId;
+
+    // 1. Verificar e Decodificar o JWT
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userId = decoded.userId;
+    } catch (err) {
+        // O token é inválido (expirado, alterado ou incorreto)
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Token de redefinição inválido ou expirado. Tente novamente a solicitação.' 
+        });
+    }
+
+    // 2. Atualizar a Senha do Usuário
+    try {
+        await pool.execute(
+            'UPDATE users SET password = ? WHERE id = ?',
+            [newPassword, userId] 
+        );
+        
+        res.json({
+            success: true,
+            message: 'Sua senha foi redefinida com sucesso. Agora você pode fazer login.'
+        });
+
+    } catch (error) {
+        console.error('Erro ao redefinir a senha:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno ao tentar atualizar a senha.'
+        });
+    }
 });
 
 export default router;

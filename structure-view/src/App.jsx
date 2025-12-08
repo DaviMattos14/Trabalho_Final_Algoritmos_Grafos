@@ -21,6 +21,7 @@ import ProblemsList from './pages/ProblemsList';
 import DFSStartFinish from './pages/problems/DFSStartFinish';
 import Forms from './pages/problems/Forms';
 import StronglyConnectedComponentsClass from './pages/classes/StronglyConnectedComponents';
+import ResetPasswordPage from './pages/ResetPassword';
 
 const ProtectedRoute = ({ children }) => {
     // ... (sua lógica de proteção) ...
@@ -40,6 +41,9 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/algorithms" element={<AlgorithmsList />} />
               <Route path="/visualizer" element={<Visualizer />} />
+
+              {/* Rota de Reset senha */}
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
               
               {/* Rotas de Aulas */}
               <Route path="/classes" element={<Classes />} />
