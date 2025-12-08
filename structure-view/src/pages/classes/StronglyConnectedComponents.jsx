@@ -299,7 +299,7 @@ procedure KOSARAJU(G):
                     {renderGraph(demoSteps[autoStep], currentEdges)}
 
                     <div style={{ marginTop: '20px', padding: '15px', backgroundColor: theme.bg, borderRadius: '8px', border: `1px solid ${theme.border}`, width: '100%', textAlign: 'center' }}>
-                         <strong style={{ color: theme.text }}>{demoSteps[autoStep].desc}</strong>
+                         <p style={{ color: theme.text, fontWeight:700 }}>{demoSteps[autoStep].desc}</p>
                     </div>
                 </section>
 
