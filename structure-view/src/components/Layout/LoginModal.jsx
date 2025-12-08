@@ -68,7 +68,6 @@ const LoginModal = ({ isOpen, onClose }) => {
       }
 
     } catch (err) {
-      console.error(err);
       setError(err.message || 'Ocorreu um erro na solicitação. Tente novamente.');
     } finally {
       setLoading(false);
