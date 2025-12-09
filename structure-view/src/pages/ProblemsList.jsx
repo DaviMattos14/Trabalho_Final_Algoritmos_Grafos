@@ -100,22 +100,26 @@ const ProblemsList = () => {
       return;
     }
 
-    let isForm = false;
-    try {
-      const parsed = typeof item.answer === 'string' ? JSON.parse(item.answer) : item.answer;
-      if (parsed && parsed.options) {
-        isForm = true;
-      }
-    } catch (e) {
-      console.log("Erro ao parsear resposta", e);
-    }
-
-    if (isForm || item.title.includes("Múltipla escolha -")) {
+    // Usar o campo 'type' para determinar o tipo de exercício
+    const exerciseType = (item.type || 'Múltipla Escolha').toLowerCase();
+    
+    if (exerciseType.includes('múltipla') || exerciseType.includes('escolha') || exerciseType.includes('form')) {
       navigate('/problem/form', { state: item });
-    }
-    else {
-      // Redirecionamento genérico para o Visualizador
-      // navigate(`/visualizer?algo=${getAlgoParam(item.title)}`);
+    } else if (exerciseType.includes('prático') || exerciseType.includes('visualizador')) {
+      navigate(`/visualizer?algo=${getAlgoParam(item.title)}`);
+    } else {
+      // Fallback: tentar detectar pelo answer se tem options
+      try {
+        const parsed = typeof item.answer === 'string' ? JSON.parse(item.answer) : item.answer;
+        if (parsed && parsed.options) {
+          navigate('/problem/form', { state: item });
+        } else {
+          navigate(`/visualizer?algo=${getAlgoParam(item.title)}`);
+        }
+      } catch (e) {
+        console.log("Erro ao detectar tipo de exercício", e);
+        navigate('/problem/form', { state: item }); // Fallback para form
+      }
     }
   };
 
