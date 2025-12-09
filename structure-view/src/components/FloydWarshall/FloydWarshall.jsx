@@ -6,6 +6,7 @@ import MatrixVisualizer from "./MatrixVisualizer";
 import RightPanel from "./RightPanel";
 import Controls from "../Graph/Controls";
 import UpdateGraphModal from "./UpdateGraphModal";
+import UpdateGraphBar from "./UpdateGraphBar";
 
 
 
