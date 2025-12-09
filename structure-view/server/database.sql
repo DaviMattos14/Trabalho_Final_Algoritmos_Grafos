@@ -60,3 +60,13 @@ ON DUPLICATE KEY UPDATE
     topic = VALUES(topic),
     answer = VALUES(answer),
     difficulty = VALUES(difficulty);
+
+
+ALTER TABLE exercises
+ADD subtopic VARCHAR(100) DEFAULT 'sem categoria',
+ADD type VARCHAR(100) DEFAULT 'Múltipla Escolha';
+
+
+UPDATE exercises
+SET title = SUBSTRING(title, LENGTH('Múltipla escolha -') + 1)
+WHERE title LIKE 'Múltipla escolha - %';

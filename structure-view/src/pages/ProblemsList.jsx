@@ -12,7 +12,8 @@ const ProblemsList = () => {
   const [exercises, setExercises] = useState([]);
   const [progressMap, setProgressMap] = useState({}); 
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTopic, setSelectedTopic] = useState('all');
+  const [selectedSubtopic, setSelectedSubtopic] = useState('all');
 
   // 1. Carregar Exercícios
   useEffect(() => {
@@ -59,14 +60,23 @@ const ProblemsList = () => {
   }, [user, exercises]);
 
   // --- Helpers ---
+  // Agrupar exercícios por topic e subtopic
   const groupedExercises = exercises.reduce((acc, item) => {
     const topic = item.topic || 'Geral';
-    if (!acc[topic]) acc[topic] = [];
-    acc[topic].push(item);
+    const subtopic = item.subtopic || 'sem categoria';
+    
+    if (!acc[topic]) acc[topic] = {};
+    if (!acc[topic][subtopic]) acc[topic][subtopic] = [];
+    
+    acc[topic][subtopic].push(item);
     return acc;
   }, {});
 
-  const availableCategories = Object.keys(groupedExercises);
+  // Extrair topics e subtopics disponíveis
+  const availableTopics = Object.keys(groupedExercises);
+  const availableSubtopics = selectedTopic === 'all' 
+    ? [] 
+    : Object.keys(groupedExercises[selectedTopic] || {});
 
   const getAlgoParam = (title) => {
       const t = title.toLowerCase();
@@ -113,21 +123,41 @@ const ProblemsList = () => {
             Exercícios Práticos
         </h2>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <Filter size={20} color={theme.textSec} />
+            
             <select 
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={selectedTopic}
+                onChange={(e) => {
+                    setSelectedTopic(e.target.value);
+                    setSelectedSubtopic('all'); // Reset subtopic ao trocar topic
+                }}
                 style={{
                     padding: '10px 15px', borderRadius: '8px', border: `1px solid ${theme.cardBorder}`,
-                    backgroundColor: theme.inputBg, color: theme.text, outline: 'none', cursor: 'pointer', fontSize: '0.95rem', minWidth: '200px'
+                    backgroundColor: theme.inputBg, color: theme.text, outline: 'none', cursor: 'pointer', fontSize: '0.95rem', minWidth: '180px'
                 }}
             >
-                <option value="all">Todas as Categorias</option>
-                {availableCategories.map((cat, idx) => (
-                    <option key={idx} value={cat}>{cat}</option>
+                <option value="all">Todos os Tópicos</option>
+                {availableTopics.map((topic, idx) => (
+                    <option key={idx} value={topic}>{topic}</option>
                 ))}
             </select>
+
+            {selectedTopic !== 'all' && availableSubtopics.length > 0 && (
+                <select 
+                    value={selectedSubtopic}
+                    onChange={(e) => setSelectedSubtopic(e.target.value)}
+                    style={{
+                        padding: '10px 15px', borderRadius: '8px', border: `1px solid ${theme.cardBorder}`,
+                        backgroundColor: theme.inputBg, color: theme.text, outline: 'none', cursor: 'pointer', fontSize: '0.95rem', minWidth: '180px'
+                    }}
+                >
+                    <option value="all">Todos os Subtópicos</option>
+                    {availableSubtopics.map((subtopic, idx) => (
+                        <option key={idx} value={subtopic}>{subtopic}</option>
+                    ))}
+                </select>
+            )}
         </div>
       </div>
 
@@ -144,17 +174,30 @@ const ProblemsList = () => {
       )}
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-        {Object.keys(groupedExercises).map((category, idx) => {
-            if (selectedCategory !== 'all' && category !== selectedCategory) return null;
+        {Object.keys(groupedExercises).map((topic, topicIdx) => {
+            if (selectedTopic !== 'all' && topic !== selectedTopic) return null;
+
+            const subtopics = groupedExercises[topic];
 
             return (
-                <section key={idx}>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '600', margin: '0 0 1.5rem 0', color: theme.textSec, borderBottom: `1px solid ${theme.cardBorder}`, paddingBottom: '10px' }}>
-                        {category}
-                    </h3>
+                <div key={topicIdx}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: '700', margin: '0 0 2rem 0', color: theme.text }}>
+                        {topic}
+                    </h2>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                    {groupedExercises[category].map((item) => {
+                    {Object.keys(subtopics).map((subtopic, subtopicIdx) => {
+                        if (selectedSubtopic !== 'all' && subtopic !== selectedSubtopic) return null;
+
+                        const items = subtopics[subtopic];
+
+                        return (
+                            <section key={subtopicIdx} style={{ marginBottom: '2.5rem' }}>
+                                <h3 style={{ fontSize: '1.15rem', fontWeight: '600', margin: '0 0 1.5rem 0', color: theme.textSec, borderBottom: `1px solid ${theme.cardBorder}`, paddingBottom: '10px' }}>
+                                    {subtopic}
+                                </h3>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                                {items.map((item) => {
                         const status = getStatusConfig(item.id);
                         
                         return (
@@ -168,7 +211,10 @@ const ProblemsList = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                 <div>
                                     <h4 style={{ margin: 0, color: theme.text, fontSize: '1.1rem', fontWeight: '600' }}>{item.title}</h4>
-                                    <span style={{ fontSize: '0.85rem', color: theme.textSec, marginTop: '5px', display: 'inline-block' }}>Dificuldade: {item.difficulty || 'Média'}</span>
+                                    <div style={{ marginTop: '5px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                        <span style={{ fontSize: '0.85rem', color: theme.textSec }}>Dificuldade: {item.difficulty || 'Média'}</span>
+                                        <span style={{ fontSize: '0.85rem', color: theme.textSec }}>Tipo: {item.type || 'Múltipla Escolha'}</span>
+                                    </div>
                                 </div>
                                 <Box size={24} color={theme.textSec} style={{opacity: 0.5}} />
                             </div>
@@ -194,9 +240,12 @@ const ProblemsList = () => {
                             </div>
                         </div>
                         );
+                                })})
+                                </div>
+                            </section>
+                        );
                     })}
-                    </div>
-                </section>
+                </div>
             );
         })}
         
