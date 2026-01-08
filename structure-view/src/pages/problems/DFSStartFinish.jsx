@@ -11,12 +11,12 @@ const DFSStartFinish = () => {
   const EXERCISE_ID = 2;
 
   const correctedAnswers = {
-      start0: 1, end0: 12,
-      start2: 2, end2: 11,
-      start3: 3, end3: 4,
-      start4: 5, end4: 10,
-      start1: 6, end1: 9,
-      start5: 7, end5: 8
+      start0: 0, end0: 11,
+      start2: 1, end2: 10,
+      start3: 2, end3: 3,
+      start4: 4, end4: 9,
+      start1: 5, end1: 8,
+      start5: 6, end5: 7
   };
 
   const [inputs, setInputs] = useState({});

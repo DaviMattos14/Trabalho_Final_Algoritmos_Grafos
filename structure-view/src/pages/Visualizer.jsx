@@ -10,6 +10,7 @@ import GraphEditor from '../components/Graph/GraphEditor';
 import Controls from '../components/Graph/Controls';
 
 import '../components/Graph/engine.css'; 
+import FloydWarshall from '../components/FloydWarshall/FloydWarshall';
 
 const Visualizer = () => {
     const navigate = useNavigate();
@@ -81,6 +82,9 @@ const Visualizer = () => {
         if (currentAlgoInfo?.name?.includes('Dijkstra')) return `{ ${list.join(', ')} }`;
         return `[${list.join(', ')}]`;
     };
+
+    if(algoParam === "floyd") 
+        return <FloydWarshall />
 
     return (
         <div className="viz-wrapper" style={{ height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: theme.bg }}>

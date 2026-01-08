@@ -21,6 +21,8 @@ import ProblemsList from './pages/ProblemsList';
 import DFSStartFinish from './pages/problems/DFSStartFinish';
 import Forms from './pages/problems/Forms';
 import StronglyConnectedComponentsClass from './pages/classes/StronglyConnectedComponents';
+import ResetPasswordPage from './pages/ResetPassword';
+import FloydWarshallClass from './pages/classes/FloydWarshall';
 
 const ProtectedRoute = ({ children }) => {
     // ... (sua lógica de proteção) ...
@@ -40,6 +42,9 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/algorithms" element={<AlgorithmsList />} />
               <Route path="/visualizer" element={<Visualizer />} />
+
+              {/* Rota de Reset senha */}
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
               
               {/* Rotas de Aulas */}
               <Route path="/classes" element={<Classes />} />
@@ -51,6 +56,7 @@ function App() {
               <Route path="/classes/bfs" element={<BreadthFirstSearchClass />} />
               <Route path="/classes/topological" element={<TopologicalSortClass />} />
               <Route path="/classes/dijkstra" element={<DijkstraClass />} />
+              <Route path="/classes/floyd" element={<FloydWarshallClass />} />
               <Route path="/classes/scc" element={<StronglyConnectedComponentsClass />} />
 
               {/* Rotas dos exercicios */}

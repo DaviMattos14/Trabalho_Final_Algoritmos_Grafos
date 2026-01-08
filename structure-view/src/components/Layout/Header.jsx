@@ -20,7 +20,8 @@ const Header = ({ title, toggleSidebar, isDarkMode, onLoginClick }) => {
     'dfs': 'Busca em Profundidade (DFS)',
     'bfs': 'Busca em Largura (BFS)',
     'dijkstra': 'Algoritmo de Dijkstra',
-    'topo': 'Ordenação Topológica'
+    'topo': 'Ordenação Topológica',
+    'floyd': "Algoritmo de Floyd-Warshall"
   };
 
   // --- MUDANÇA 1: Registro das Rotas de Sub-páginas ---

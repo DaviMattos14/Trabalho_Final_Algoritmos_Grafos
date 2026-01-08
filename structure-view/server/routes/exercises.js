@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
     const [rows] = await pool.execute(
-      'SELECT id, title, answer, topic, difficulty, created_at, updated_at FROM exercises ORDER BY id'
+      'SELECT id, title, topic, subtopic, difficulty, type, answer, created_at, updated_at FROM exercises ORDER BY id'
     );
     res.json({ success: true, exercises: rows });
   } catch (error) {

@@ -10,6 +10,7 @@ const AlgorithmsList = () => {
     { id: 'bfs', name: 'Busca em Largura (BFS)', desc: 'Explora vizinhos camada por camada.', color: '#10b981' },
     { id: 'dijkstra', name: 'Algoritmo de Dijkstra', desc: 'Encontra o caminho mais curto em grafos ponderados.', color: '#f59e0b' },
     { id: 'topo', name: 'Ordenação Topológica', desc: 'Ordenação linear para grafos direcionados.', color: '#8b5cf6' },
+    { id: 'floyd', name: 'Algoritmo de Floyd-Warshall', desc: 'Encontro o caminho mínimo entre os vértices.', color: '#c30f16' },
   ];
 
   return (

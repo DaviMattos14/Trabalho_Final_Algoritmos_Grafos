@@ -7,12 +7,14 @@ import { dfsAlgorithm } from '../algorithms/dfs';
 import { bfsAlgorithm } from '../algorithms/bfs';
 import { dijkstraAlgorithm } from '../algorithms/dijkstra';
 import { topologicalAlgorithm } from '../algorithms/topological';
+import { floydWarshallAlgorithm } from '../algorithms/floyd';
 
 const ALGORITHMS = {
     'dfs': dfsAlgorithm,
     'bfs': bfsAlgorithm,
     'dijkstra': dijkstraAlgorithm,
-    'topo': topologicalAlgorithm
+    'topo': topologicalAlgorithm,
+    'floyd': floydWarshallAlgorithm,
 };
 
 const DEFAULT_GRAPH = {
@@ -94,10 +96,6 @@ export const useGraph = (initialAlgo = 'dfs') => {
 
     // --- CONTROLE DE DIREÇÃO AUTOMÁTICO ---
     useEffect(() => {
-        // Só altera se o algoritmo mudar e não tivermos uma preferência salva explícita?
-        // Para simplificar UX: BFS força não-direcionado, outros forçam direcionado
-        // Mas respeitamos o valor salvo na carga inicial (o useEffect roda após o render)
-        
         if (algorithmKey === 'bfs') {
             setIsDirected(false); 
         } else {
@@ -105,9 +103,10 @@ export const useGraph = (initialAlgo = 'dfs') => {
         }
     }, [algorithmKey]);
 
-
+    
     // --- EXECUÇÃO DO ALGORITMO ---
     useEffect(() => {
+        
         const algo = ALGORITHMS[algorithmKey];
         if (!algo) return;
 
@@ -120,6 +119,8 @@ export const useGraph = (initialAlgo = 'dfs') => {
         }
         
         if (effectiveStart) {
+            // Nota: Para Floyd, startNode é irrelevante para o cálculo da matriz completa,
+            // mas mantemos a assinatura para consistência.
             const steps = algo.getSteps(graph, effectiveStart, isDirected);
             setHistory(steps);
             setCurrentStepIndex(0);

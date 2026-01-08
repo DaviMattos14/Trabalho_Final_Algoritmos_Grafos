@@ -104,5 +104,38 @@ export const api = {
       if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
       throw error;
     }
+  },
+
+  async forgotPassword(email) {
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Erro ao solicitar link de redefinição.');
+      return data;
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
+      throw error;
+    }
+  },
+
+  async resetPassword(token, newPassword) {
+    try {
+      // O token vai na URL (params) e a nova senha no corpo
+      const response = await fetch(`${API_URL}/auth/reset-password/${token}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Erro ao redefinir a senha.');
+      return data;
+    } catch (error) {
+      if (error.message.includes('fetch')) throw new Error('Não foi possível conectar ao servidor.');
+      throw error;
+    }
   }
 };

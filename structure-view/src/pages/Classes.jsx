@@ -24,7 +24,8 @@ const Classes = () => {
         { id: 'bfs-intro', title: "Busca em Largura (BFS)", desc: "Exploração de grafos com fila." },
         { id: 'scc-intro', title: "Componentes Fortemente Conexos", desc: "Ciclos e conectividade (CFCs)." },
         { id: 'topo-intro', title: "Ordenação Topológica", desc: "Ordenação linear para grafos direcionados acíclicos." },
-        { id: 'dijkstra-intro', title: "Algoritmo de Dijkstra", desc: "Caminho mais curto em grafos ponderados." }
+        { id: 'dijkstra-intro', title: "Algoritmo de Dijkstra", desc: "Caminho mais curto em grafos ponderados." },
+        { id: 'floyd-intro', title: "Algoritmo de Floyd-Warshall", desc: "Caminho mais curto em grafos ponderados." }
       ]
     }
   ];
@@ -80,6 +81,7 @@ const Classes = () => {
                     else if (item.id === 'scc-intro') navigate('/classes/scc');
                     else if (item.id === 'topo-intro') navigate('/classes/topological');
                     else if (item.id === 'dijkstra-intro') navigate('/classes/dijkstra');
+                    else if (item.id === 'floyd-intro') navigate('/classes/floyd');
                     else console.log("Aula em breve");
                   }}
                   style={{

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Network, X, AlertCircle } from 'lucide-react';
+import { Network, X, AlertCircle, CheckCircle } from 'lucide-react';
 
 // --- CORREÇÃO DOS CAMINHOS (../../) ---
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,7 @@ const LoginModal = ({ isOpen, onClose }) => {
   
   // Estados do Formulário
   const [isRegister, setIsRegister] = useState(false);
+  const [isForgot, setIsForgot] = useState(false); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -18,11 +19,13 @@ const LoginModal = ({ isOpen, onClose }) => {
   // Estados de UI
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(''); 
 
   if (!isOpen) return null;
 
   const resetForm = () => {
     setError('');
+    setSuccess('');
     setEmail('');
     setPassword('');
     setName('');
@@ -31,8 +34,46 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleSwitchMode = (e) => {
     e.preventDefault();
     setIsRegister(!isRegister);
+    setIsForgot(false);
     resetForm();
   };
+
+  const handleToggleForgot = (e) => {
+    e.preventDefault();
+    setIsForgot(!isForgot);
+    setIsRegister(false);
+    resetForm();
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    if (!email) {
+      setError("O email é obrigatório para a recuperação de senha.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await api.forgotPassword(email);
+
+      if (response.success) {
+        setSuccess('Link de redefinição enviado! Verifique sua caixa de entrada.');
+      } else {
+        // Trata erros específicos da API se houver
+        setError(response.message || 'Erro ao tentar recuperar a senha. Email não encontrado ou erro de servidor.');
+      }
+
+    } catch (err) {
+      setError(err.message || 'Ocorreu um erro na solicitação. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,6 +93,8 @@ const LoginModal = ({ isOpen, onClose }) => {
       if (response.success) {
         login(response.user);
         onClose();
+      } else {
+         setError(response.message || 'Credenciais inválidas ou erro no servidor.');
       }
 
     } catch (err) {
@@ -92,7 +135,26 @@ const LoginModal = ({ isOpen, onClose }) => {
       backgroundColor: '#fee2e2', color: '#dc2626', padding: '10px',
       borderRadius: '6px', fontSize: '0.9rem', marginBottom: '1rem',
       display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left'
+    },
+    successBox: {
+      backgroundColor: '#dcfce7', color: '#16a34a', padding: '10px',
+      borderRadius: '6px', fontSize: '0.9rem', marginBottom: '1rem',
+      display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left'
     }
+  };
+
+  // Determina o texto do cabeçalho
+  const getHeaderTitle = () => {
+    if (isForgot) return 'Recuperar Senha';
+    if (isRegister) return 'Crie sua conta';
+    return 'Bem-vindo de volta';
+  };
+
+  // Determina o texto da descrição
+  const getHeaderDescription = () => {
+    if (isForgot) return 'Insira seu email para receber um link de redefinição.';
+    if (isRegister) return 'Preencha os dados para começar';
+    return 'Entre para acessar seus grafos';
   };
 
   return (
@@ -107,61 +169,116 @@ const LoginModal = ({ isOpen, onClose }) => {
             <Network size={48} />
         </div>
         <h2 style={{ color: '#1e293b', marginBottom: '0.5rem' }}>
-            {isRegister ? 'Crie sua conta' : 'Bem-vindo de volta'}
+            {getHeaderTitle()}
         </h2>
         <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-            {isRegister ? 'Preencha os dados para começar' : 'Entre para acessar seus grafos'}
+            {getHeaderDescription()}
         </p>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            
-            {error && (
-                <div style={styles.errorBox}>
-                    <AlertCircle size={18} />
-                    <span>{error}</span>
-                </div>
-            )}
+        {/* Formulário de Recuperação de Senha */}
+        {isForgot ? (
+            <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                
+                {error && (
+                    <div style={styles.errorBox}>
+                        <AlertCircle size={18} />
+                        <span>{error}</span>
+                    </div>
+                )}
+                
+                {/* NOVO: Exibe mensagem de sucesso */}
+                {success && (
+                    <div style={styles.successBox}>
+                        <CheckCircle size={18} />
+                        <span>{success}</span>
+                    </div>
+                )}
 
-            {isRegister && (
                 <input 
-                  type="text" 
-                  placeholder="Seu Nome" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  type="email" 
+                  placeholder="Email de Recuperação" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   style={styles.input}
                   required
                 />
-            )}
+                
+                <button type="submit" style={styles.button} disabled={loading}>
+                  {loading ? 'Enviando...' : 'Enviar Link de Redefinição'}
+                </button>
+                
+                {/* Link para voltar para o Login */}
+                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#64748b' }}>
+                    <a href="#" onClick={handleToggleForgot} style={{ color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>
+                        Voltar para o Login
+                    </a>
+                </p>
 
-            <input 
-              type="email" 
-              placeholder="Email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
-              required
-            />
-            
-            <input 
-              type="password" 
-              placeholder="Senha" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
-              required
-            />
-            
-            <button type="submit" style={styles.button} disabled={loading}>
-              {loading ? 'Carregando...' : (isRegister ? 'Cadastrar' : 'Entrar')}
-            </button>
-        </form>
+            </form>
+        ) : (
+            /* Formulário de Login/Cadastro */
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                
+                {error && (
+                    <div style={styles.errorBox}>
+                        <AlertCircle size={18} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                {isRegister && (
+                    <input 
+                      type="text" 
+                      placeholder="Seu Nome" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      style={styles.input}
+                      required
+                    />
+                )}
+
+                <input 
+                  type="email" 
+                  placeholder="Email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={styles.input}
+                  required
+                />
+                
+                <input 
+                  type="password" 
+                  placeholder="Senha" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={styles.input}
+                  required
+                />
+                
+                {/* Link para 'Esqueceu sua senha?' */}
+                {!isRegister && (
+                    <div style={{ textAlign: 'right', marginBottom: '0.5rem' }}>
+                        <a href="#" onClick={handleToggleForgot} style={{ color: '#64748b', fontSize: '0.9rem', textDecoration: 'none' }}>
+                            Esqueceu sua senha?
+                        </a>
+                    </div>
+                )}
+
+                <button type="submit" style={styles.button} disabled={loading}>
+                  {loading ? 'Carregando...' : (isRegister ? 'Cadastrar' : 'Entrar')}
+                </button>
+            </form>
+        )}
         
-        <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: '#64748b' }}>
-            {isRegister ? 'Já tem uma conta? ' : 'Não tem conta? '}
-            <a href="#" onClick={handleSwitchMode} style={{ color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>
-                {isRegister ? 'Faça Login' : 'Registre-se'}
-            </a>
-        </p>
+        {/* Rodapé de Login/Cadastro */}
+        {!isForgot && (
+            <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: '#64748b' }}>
+                {isRegister ? 'Já tem uma conta? ' : 'Não tem conta? '}
+                <a href="#" onClick={handleSwitchMode} style={{ color: '#2563eb', fontWeight: 'bold', textDecoration: 'none' }}>
+                    {isRegister ? 'Faça Login' : 'Registre-se'}
+                </a>
+            </p>
+        )}
       </div>
     </div>
   );
